@@ -181,8 +181,7 @@ let bloomDone = false;
 let focusingCard = false;
 let focusT = 0;
 const focusStart = new THREE.Vector3();
-const focusEnd = new THREE.Vector3(0, 1.85, 0.15);
-const focusLookStart = new THREE.Vector3();
+const focusEnd = new THREE.Vector3(0, 1.85, 0.7);const focusLookStart = new THREE.Vector3();
 const focusLookEnd = new THREE.Vector3(0, 1.85, -0.2);
 const waterDrops = [];
 
