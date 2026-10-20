@@ -9,7 +9,7 @@ from pathlib import Path
 import numpy as np
 from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bedroom_surfaces import surface, bake_static_occlusion
+from bedroom_surfaces import surface, bake_static_occlusion, image, texture
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'public/models/bedroom.glb'
@@ -41,17 +41,19 @@ def mat(name, color, rough=.8, grain=None, emission=0):
     return surface(name, color, rough, grain, emission)
 
 
-ivory = mat('Warm limewash', (.83,.77,.66), grain='plaster')
-sage = mat('Sage paneling', (.43,.52,.39))
-trim = mat('Painted ivory', (.88,.83,.73), .65)
-oak = mat('Honey oak', (.59,.39,.22), .62, 'wood')
-floorwood = mat('Pale floor oak', (.70,.56,.38), .85, 'wood')
+ivory = mat('Warm limewash', (.76,.84,.86), grain='plaster')
+sage = mat('Sage paneling', (.69,.76,.69))
+trim = mat('Painted ivory', (.90,.87,.79), .65)
+oak = mat('Honey oak', (.54,.35,.20), .52, 'wood')
+floorwood = mat('Pale floor oak', (.76,.69,.56), .68, 'wood')
 linen = mat('Unbleached linen', (.88,.83,.72), .96, 'fabric')
-rose = mat('Dusty rose quilt', (.68,.38,.40), .94, 'fabric')
+rose = mat('Dusty rose quilt', (.89,.87,.81), .94, 'fabric')
 throw = mat('Sage woven throw', (.46,.54,.42), .96, 'fabric')
 cream = mat('Ivory cotton', (.92,.87,.77), .96, 'fabric')
 brass = mat('Soft aged brass', (.56,.38,.16), .38)
-ceramic = mat('Hand thrown clay', (.62,.29,.19), .64, 'plaster')
+ceramic = mat('Hand thrown clay', (.96,.88,.69), .27, 'plaster')
+glaze_cream = mat('Cream glazed rim', (.93,.87,.74), .30)
+glaze_rose = mat('Rose painted petals', (.76,.45,.49), .38)
 soil = mat('Dark potting earth', (.13,.10,.065), 1, 'plaster')
 green = mat('Living leaf', (.25,.42,.23), .72)
 leaflight = mat('Young leaf', (.42,.56,.29), .75)
@@ -59,7 +61,19 @@ canmat = mat('Sage enamel', (.37,.50,.40), .32, 'enamel')
 dark = mat('Quiet shadow', (.18,.24,.17), .9)
 gold = mat('Lamp linen glow', (.96,.78,.43), .85, emission=.15)
 sky = mat('Window daylight', (.70,.83,.82), .98, emission=.35)
+yy,xx=np.mgrid[0:256,0:256]/255
+cloud=np.exp(-((xx-.30)/.32)**2-((yy-.72)/.055)**2)*.07
+sky_pixels=np.stack((.78-.20*yy+cloud,.85-.10*yy+cloud,.84+.02*yy+cloud),axis=2)
+sky_map=texture(sky,image('Soft garden sky',sky_pixels))
+sky_bsdf=sky.node_tree.nodes.get('Principled BSDF')
+sky.node_tree.links.new(sky_map.outputs['Color'],sky_bsdf.inputs['Base Color'])
+sky.node_tree.links.new(sky_map.outputs['Color'],sky_bsdf.inputs['Emission Color'])
 bookrose = mat('Book rose', (.57,.29,.29))
+seam = mat('Quiet linen seam', (.65,.61,.53), .95)
+rose_seam = mat('Rose edge binding', (.68,.68,.59), .95)
+glass = mat('Window glass', (.90,.96,.95), .12)
+glass.node_tree.nodes.get('Principled BSDF').inputs['Alpha'].default_value=.12
+glass.diffuse_color=(.90,.96,.95,.12);glass.surface_render_method='DITHERED'
 
 bedroom = empty('bedroom')
 shell = empty('room_shell', parent=bedroom)
@@ -69,6 +83,7 @@ plant = empty('plant_rest', (1.10,1.40,-.88), bedroom)
 can = empty('watering_can', (1.91,1.085,-.85), bedroom)
 cleft = empty('curtain_left', (.02,2.94,-1.78), bedroom)
 cright = empty('curtain_right', (2.09,2.94,-1.78), bedroom)
+backdrop = empty('window_backdrop', parent=bedroom)
 
 
 def assign(o, material, parent=shell, smooth=False):
@@ -79,14 +94,35 @@ def assign(o, material, parent=shell, smooth=False):
     return o
 
 
-def box(name, pos, dims, material, parent=shell, bevel=.025):
+def project_uv(o, material):
+    kind=material.get('surface_kind')
+    if kind not in ('wood','fabric','plaster'):return
+    bpy.context.view_layer.update()
+    points=[o.matrix_world@v.co for v in o.data.vertices]
+    room=[(p.x,p.z,-p.y) for p in points]
+    dims=[max(p[a] for p in room)-min(p[a] for p in room) for a in range(3)]
+    uv=o.data.uv_layers.active or o.data.uv_layers.new(name='UVMap')
+    offset=(RNG.random(),RNG.random()) if kind=='wood' else (0,0)
+    for f in o.data.polygons:
+        normal=o.matrix_world.to_3x3()@f.normal;normal=(normal.x,normal.z,-normal.y)
+        excluded=max(range(3),key=lambda a:abs(normal[a]))
+        axes=[a for a in range(3) if a!=excluded]
+        along=max(axes,key=lambda a:dims[a]);across=next(a for a in axes if a!=along)
+        for loop in f.loop_indices:
+            p=room[o.data.loops[loop].vertex_index]
+            uv.data[loop].uv=(p[across]*(4.5 if kind=='wood' else 14 if kind=='fabric' else 1.5)+offset[0],
+                              p[along]*(.55 if kind=='wood' else 14 if kind=='fabric' else 1.5)+offset[1])
+
+
+def box(name, pos, dims, material, parent=shell, bevel=.025, segments=3):
     bpy.ops.mesh.primitive_cube_add(size=1, location=B(pos))
     o=bpy.context.object; o.name=name; o.dimensions=B((dims[0],dims[1],-dims[2]))
     bpy.ops.object.transform_apply(location=False, rotation=False, scale=True)
     if bevel:
-        b=o.modifiers.new('Soft modeled edges','BEVEL'); b.width=bevel; b.segments=3
+        b=o.modifiers.new('Soft modeled edges','BEVEL'); b.width=bevel; b.segments=segments
         o.modifiers.new('Weighted corner normals','WEIGHTED_NORMAL')
-    return assign(o, material, parent)
+    assign(o, material, parent);project_uv(o,material)
+    return o
 
 
 def mesh(name, verts, faces, material, parent=shell, uv=None, smooth=True):
@@ -105,16 +141,28 @@ def sphere(name, pos, dims, material, parent=shell):
     return assign(o,material,parent,True)
 
 
-def tube(name, points, radius, material, parent=shell):
-    data=bpy.data.curves.new(name,'CURVE'); data.dimensions='3D'; data.resolution_u=12
-    data.bevel_depth=radius; data.bevel_resolution=2
+def tapered_leg(name, pos, height, top, bottom, parent):
+    verts=[(pos[0]+sx*w/2,pos[1]+y,pos[2]+sz*w/2)
+           for y,w in ((-height/2,bottom),(height/2,top)) for sx,sz in ((-1,-1),(1,-1),(1,1),(-1,1))]
+    obj=mesh(name,verts,[(3,2,1,0),(4,5,6,7),(0,1,5,4),(1,2,6,5),(2,3,7,6),(3,0,4,7)],oak,parent,smooth=False)
+    edge=obj.modifiers.new('Fine eased joinery','BEVEL');edge.width=.008;edge.segments=2
+    obj.modifiers.new('Joinery normals','WEIGHTED_NORMAL');project_uv(obj,oak)
+    return obj
+
+
+def tube(name, points, radius, material, parent=shell, radii=None):
+    data=bpy.data.curves.new(name,'CURVE'); data.dimensions='3D'
+    data.resolution_u=3 if radius<=.008 else 8
+    data.bevel_depth=radius; data.bevel_resolution=0 if radius<=.008 else 1
     s=data.splines.new('BEZIER'); s.bezier_points.add(len(points)-1)
-    for p,co in zip(s.bezier_points,points):
+    for i,(p,co) in enumerate(zip(s.bezier_points,points)):
         p.co=B(co); p.handle_left_type='AUTO'; p.handle_right_type='AUTO'
+        if radii:p.radius=radii[i]
     o=bpy.data.objects.new(name,data); bpy.context.collection.objects.link(o)
     data.materials.append(material); parent_keep(o,parent)
     bpy.ops.object.select_all(action='DESELECT'); o.select_set(True); bpy.context.view_layer.objects.active=o
     bpy.ops.object.convert(target='MESH')
+    project_uv(o,material)
     return o
 
 
@@ -133,24 +181,89 @@ def lathe(name, center, profile, material, parent=shell, sides=40):
 
 def leaf(name, start, end, width, material, parent):
     a=Vector(start);b=Vector(end);d=b-a
-    side=Vector((d.z,0,-d.x)).normalized()*width
-    c=a+d*.5
-    verts=[a,c-side,b,c+side,c+Vector((0,.035,0))]
-    return mesh(name,[tuple(v) for v in verts],[(0,1,4),(1,2,4),(2,3,4),(3,0,4)],material,parent)
+    side=Vector((d.z,0,-d.x)).normalized();verts=[];uv=[];faces=[]
+    for j in range(11):
+        t=j/10
+        for i in range(7):
+            s=i/3-1;w=math.sin(math.pi*t)**.75*width
+            p=a+d*t+side*(s*w)+Vector((0,(1-s*s)*.018*math.sin(math.pi*t)-.025*t*t,0))
+            verts.append(tuple(p));uv.append((i/6,t))
+    for j in range(10):
+        for i in range(6):
+            k=j*7+i;faces.append((k,k+7,k+8,k+1))
+    result=mesh(name,verts,faces,material,parent,uv)
+    if parent==plant:
+        tube('Leaf midrib',[tuple(a),tuple(a+d*.45+Vector((0,.018,0))),tuple(b-Vector((0,.025,0)))],.0016,leaflight,parent)
+    return result
+
+
+def cushion(name, center, half, material):
+    verts=[];uv=[];faces=[]
+    def signed(v,p):return math.copysign(abs(v)**p,v)
+    for j in range(19):
+        lat=-math.pi/2+j*math.pi/18;ring=max(0,math.cos(lat))**.55
+        for i in range(33):
+            a=i/32*math.tau
+            x=half[0]*signed(math.cos(a),.52)*ring
+            z=half[2]*signed(math.sin(a),.52)*ring
+            y=half[1]*math.sin(lat)
+            if y>0:y-=.013*ring**5*(1+math.sin(a*7+lat*3))
+            verts.append((center[0]+x,center[1]+y,center[2]+z));uv.append((x*14,z*14))
+    for j in range(18):
+        for i in range(32):
+            k=j*33+i;faces.append((k,k+33,k+34,k+1))
+    mesh(name,verts,faces,material,uv=uv)
+    points=[]
+    for i in range(25):
+        a=i/24*math.tau
+        points.append((center[0]+half[0]*signed(math.cos(a),.52),center[1],center[2]+half[2]*signed(math.sin(a),.52)))
+    tube(name+' stitched piping',points,.0035,seam)
+
+
+def blanket_y(x,z):
+    wrinkles=.025*math.sin(z*10+x*4)+.014*math.sin(z*24-x*12)
+    side=max(0,(abs(x)-.66)/.20)
+    foot=max(0,(z-1.08)/.34)
+    return .81+wrinkles-.25*side**1.45-.32*foot**1.3
+
+
+def blanket(name,zmin,zmax,material,lift=0):
+    verts=[];uv=[];faces=[]
+    for j in range(39):
+        z=zmin+(zmax-zmin)*j/38
+        for i in range(33):
+            x=(i/32-.5)*1.72
+            verts.append((-1.64+x,blanket_y(x,z)+lift,z));uv.append((x*14,z*14))
+    for j in range(38):
+        for i in range(32):
+            k=j*33+i;faces.append((k,k+33,k+34,k+1))
+    obj=mesh(name,verts,faces,material,uv=uv)
+    thick=obj.modifiers.new('Sewn textile thickness','SOLIDIFY');thick.thickness=.008
+    perimeter=[(-1.64+x,blanket_y(x,z)+lift+.003,z) for x,z in
+               [(-.86,zmin+j*(zmax-zmin)/14) for j in range(15)]+
+               [(-.86+i*1.72/14,zmax) for i in range(1,15)]+
+               [(.86,zmax-j*(zmax-zmin)/14) for j in range(1,15)]+
+               [(.86-i*1.72/14,zmin) for i in range(1,15)]]
+    tube(name+' edge binding',perimeter,.0035,rose_seam if material==rose else seam)
 
 
 # Quiet cutaway shell with an actual aperture, open ceiling/front/right view.
 box('Floor foundation',(0,-.105,.05),(5.75,.17,4.55),oak,bevel=.05)
-for j in range(8):
-    for i in range(5):
-        box('Individual oak floorboard',(-2.25+i*1.12,.005,-1.87+j*.55),(1.108,.045,.539),floorwood,bevel=.008)
+for i in range(24):
+    width=5.6/24;z=-2.15-(i%3)*.48
+    while z<2.25:
+        start=max(-2.15,z);end=min(2.25,z+1.44)
+        if end>start+.01:
+            box('Staggered oak floorboard',(-2.8+(i+.5)*width,.002,(start+end)/2),
+                (width-.0015,.04,end-start-.0015),floorwood,bevel=.0025,segments=1)
+        z+=1.44
 box('Left bedroom wall',(-2.83,1.6,.05),(.13,3.2,4.5),ivory)
 # Rear wall: opening x .14..1.96, y 1.49..2.81, z -2.1.
 for name,pos,dims in [
     ('Rear lower',(0,.735,-2.1),(5.66,1.47,.13)),
     ('Rear upper',(0,3.025,-2.1),(5.66,.39,.13)),
     ('Rear left',(-1.345,2.15,-2.1),(2.97,1.36,.13)),
-    ('Rear right',(2.395,2.15,-2.1),(.87,1.36,.13))]: box(name,pos,dims,ivory)
+    ('Rear right',(2.395,2.15,-2.1),(.87,1.36,.13))]: box(name,pos,dims,ivory,bevel=0)
 box('Rear sage wainscot',(0,.5,-2.018),(5.65,1.0,.035),sage)
 box('Left sage wainscot',(-2.75,.5,.05),(.035,1,4.5),sage)
 for x in np.arange(-2.6,2.7,.52): box('Panel stile',(float(x),.5,-1.99),(.028,.88,.025),trim,bevel=.008)
@@ -160,7 +273,16 @@ box('Left rail',(-2.7,1.02,.05),(.075,.065,4.5),trim)
 box('Left skirting',(-2.7,.12,.05),(.07,.15,4.5),trim)
 box('Rear cornice',(0,3.14,-2.0),(5.65,.12,.15),trim)
 # Window daylight and layered casing.
-box('Distant daylight',(1.05,2.15,-2.22),(1.82,1.32,.025),sky,bevel=0)
+mesh('Garden sky through aperture',[(.14,1.49,-2.15),(1.96,1.49,-2.15),(1.96,2.81,-2.15),(.14,2.81,-2.15)],
+     [(0,1,2,3)],sky,backdrop,uv=[(0,0),(1,0),(1,1),(0,1)],smooth=False)
+box('Thin window glazing',(1.05,2.15,-2.05),(1.80,1.30,.006),glass,bevel=0)
+for j in range(2):
+    cx=1.50+j*.22;cy=2.24+j*.25
+    tube('Outside garden branch',[(cx-.32,cy-.36,-2.12),(cx,cy,-2.12),(cx+.15,cy+.14,-2.12)],.012,oak,backdrop)
+    for k in range(8):
+        a=k*2.4;px=cx+math.cos(a)*.14;py=cy+math.sin(a)*.16
+        verts=[(px,py,-2.115),(px+.035,py+.045,-2.10),(px+.11,py+.10,-2.115),(px+.075,py+.025,-2.10)]
+        mesh('Sunlit garden leaf',verts,[(0,1,2),(0,2,3)],green if k%2 else leaflight,backdrop)
 for dx in (-.94,.94): box('Window jamb',(1.05+dx,2.15,-1.99),(.09,1.5,.19),trim)
 for dy in (-.69,.69): box('Window rail',(1.05,2.15+dy,-1.99),(1.96,.09,.19),trim)
 box('Window center',(1.05,2.15,-1.97),(.065,1.32,.1),trim)
@@ -174,7 +296,7 @@ for parent,cx in ((cleft,.02),(cright,2.09)):
         for i in range(25):
             u=i/24; width=.43+.10*math.cos(v*math.pi)
             verts.append((cx+(u-.5)*width,2.94-v*1.76,-1.78+.055*math.cos(u*math.pi*8)+.02*math.sin(v*math.pi)))
-            uv.append((u,v))
+            uv.append((u*5,v*20))
     for j in range(24):
         for i in range(24):
             a=j*25+i;faces.append((a,a+25,a+26,a+1))
@@ -185,26 +307,20 @@ box('Bed oak frame',(-1.64,.36,-.10),(1.56,.21,2.68),oak,bevel=.07)
 for x in (-2.25,-1.03):
     for z in (-1.24,1.05): box('Tapered bed foot',(x,.17,z),(.11,.32,.11),oak,bevel=.04)
 box('Padded mattress',(-1.64,.56,-.10),(1.51,.32,2.57),cream,bevel=.14)
-box('Upholstered headboard',(-1.64,.90,-1.47),(1.67,.97,.16),linen,bevel=.15)
-sphere('Arched headboard crown',(-1.64,1.27,-1.47),(.80,.28,.083),linen)
-for x in (-2.0,-1.30):
-    p=sphere('Soft pillow',(x,.83,-.94),(.34,.16,.36),cream)
-    p.rotation_euler[2]=.08 if x< -1.5 else -.09
-verts=[];faces=[];uv=[]
-for j in range(27):
-    v=j/26
-    for i in range(21):
-        u=i/20;edge=abs(u-.5)*2
-        verts.append((-1.64+(u-.5)*1.70,.79-.18*edge**12+.012*math.sin(v*20+u*8),-.54+v*1.85))
-        uv.append((u,v))
-for j in range(26):
-    for i in range(20):
-        a=j*21+i;faces.append((a,a+21,a+22,a+1))
-mesh('Draped rose quilt',verts,faces,rose,uv=uv)
-box('Folded sage throw',(-1.64,.79,.86),(1.68,.08,.48),throw,bevel=.04)
+outline=[(-.82,.43),(.82,.43),(.82,1.13)]+[(math.cos(a)*.82,1.13+math.sin(a)*.32) for a in np.linspace(0,math.pi,25)]+[(-.82,1.13)]
+verts=[(-1.64+x,y,z) for z in (-1.55,-1.39) for x,y in outline];n=len(outline)
+faces=[tuple(reversed(range(n))),tuple(range(n,n*2))]+[(i,(i+1)%n,(i+1)%n+n,i+n) for i in range(n)]
+head=mesh('One piece upholstered headboard',verts,faces,linen,smooth=False)
+b=head.modifiers.new('Padded arch edge','BEVEL');b.width=.045;b.segments=3
+head.modifiers.new('Soft upholstery normals','WEIGHTED_NORMAL');project_uv(head,linen)
+tube('Headboard piping',[(-1.64+x*.94,.05+(y-.05)*.94,-1.335) for x,y in outline+[outline[0]]],.004,seam)
+for x in (-2.01,-1.28):cushion('Sewn cotton pillow',(x,.86,-.96),(.33,.14,.31),cream)
+blanket('Naturally folded rose quilt',-.54,1.42,rose)
+blanket('Folded sage linen throw',.66,1.14,throw,.022)
 for k in range(12):
     x=-2.4+k*.14
-    tube('Throw fringe',[(x,.79,1.09),(x+.01,.72,1.16)],.006,throw)
+    y=blanket_y(x+1.64,1.14)+.022
+    tube('Throw fringe',[(x,y,1.14),(x+.01,y-.035,1.21)],.003,throw)
 # Oval woven rug with border and shallow thickness.
 o=lathe('Woven oval rug',(-.38,.045,.75),[(0,0),(1.06,0),(1.10,.018),(1.07,.035),(0,.035)],linen,sides=64)
 o.scale.y=1.25  # Blender local Y is room depth.
@@ -218,15 +334,11 @@ tube('Botanical stem',[(-1.32,2.43,-1.925),(-1.33,2.65,-1.925),(-1.25,2.82,-1.92
 for j in range(4):
     y=2.50+j*.07; dx=.13 if j%2 else -.14
     leaf('Pressed leaf',(-1.32,y,-1.92),(-1.32+dx,y+.06,-1.91),.04,leaflight,shell)
-sphere('Fabric plush body',(-.98,.87,-1.14),(.14,.19,.11),linen)
-sphere('Fabric plush head',(-.98,1.08,-1.14),(.13,.12,.10),linen)
-for x in (-1.08,-.88): sphere('Plush ear',(x,1.18,-1.14),(.055,.07,.035),linen)
-for x in (-1.02,-.94): sphere('Stitched eye',(x,1.10,-1.046),(.009,.009,.006),dark)
 
 # Desk with rounded joinery, drawers and tucked chair.
 box('Solid oak desktop',(1.13,1.02,-.97),(2.35,.12,1.05),oak,desk,.055)
 for x in (.16,2.10):
-    for z in (-1.35,-.6): box('Desk tapered leg',(x,.51,z),(.10,.98,.10),oak,desk,.025)
+    for z in (-1.35,-.6): tapered_leg('Desk tapered leg',(x,.51,z),.98,.105,.055,desk)
 box('Desk apron',(1.13,.87,-.53),(2.10,.20,.08),oak,desk)
 for x in (.61,1.65):
     box('Inset drawer',(x,.87,-.478),(.94,.15,.04),floorwood,desk,.018)
@@ -243,30 +355,59 @@ lathe('Pleated lamp shade',(.25,1.51,-1.24),[(.24,0),(.16,.29),(.14,.29),(.22,0)
 for y,m in ((1.10,bookrose),(1.16,linen)):
     box('Desk notebook',(.64,y,-1.28),(.40,.045,.28),m,desk,.015)
 
-# Hollow handmade pot and pre-bloom seedling, independently addressable.
-lathe('Pot body',(1.10,1.085,-.88),[(0,0),(.145,0),(.155,.025),(.205,.30),(.225,.31),(.227,.345),(.195,.354),(.183,.315),(.137,.045),(0,.045)],ceramic,pot)
+# Rounded butter-glazed planter, cream saucer/rim and small painted flowers.
+lathe('Cream drainage saucer',(1.10,1.085,-.88),[(0,0),(.195,0),(.22,.012),(.222,.025),(.21,.034),(.17,.030),(0,.030)],glaze_cream,pot)
+lathe('Rounded glazed pot',(1.10,1.085,-.88),[(0,.026),(.145,.026),(.178,.045),(.213,.11),(.221,.20),(.209,.29),(.200,.325),(.188,.325),(.184,.30),(.193,.20),(.171,.073),(0,.061)],ceramic,pot)
+lathe('Cream rolled pot rim',(1.10,1.085,-.88),[(.188,.315),(.201,.315),(.214,.327),(.212,.343),(.20,.351),(.188,.344),(.184,.331),(.188,.315)],glaze_cream,pot)
+def painted_oval(name,cx,cy,rx,ry,material):
+    coords=[(cx+rx*math.cos(a),cy+ry*math.sin(a)) for a in np.linspace(0,math.tau,13)]
+    verts=[(x,1.085+y,-.88+math.sqrt(max(0,.221**2-(x-1.10)**2))+.0015) for x,y in coords]
+    mesh(name,verts,[tuple(range(len(verts)))],material,pot,smooth=False)
+for cx,cy in ((1.025,.19),(1.185,.16)):
+    for j in range(5):
+        a=j*math.tau/5
+        painted_oval('Hand painted rose petal',cx+math.cos(a)*.022,cy+math.sin(a)*.022,.014,.018,glaze_rose)
+    painted_oval('Painted cream flower center',cx,cy,.010,.010,glaze_cream)
 lathe('Visible earth',(1.10,1.085,-.88),[(0,.315),(.19,.315)],soil,pot)
-tube('Living stem',[(1.10,1.39,-.88),(1.09,1.61,-.87),(1.14,1.84,-.86)],.012,green,plant)
+for j in range(28):
+    a=RNG.random()*math.tau;r=math.sqrt(RNG.random())*.175
+    bpy.ops.mesh.primitive_ico_sphere_add(subdivisions=1,radius=RNG.uniform(.008,.019),
+        location=B((1.10+math.cos(a)*r,1.404+RNG.random()*.004,-.88+math.sin(a)*r)))
+    obj=bpy.context.object;obj.name='Loose potting soil';obj.scale.z=.5;assign(obj,soil,pot,True)
+tube('Living stem',[(1.10,1.39,-.88),(1.09,1.61,-.87),(1.14,1.84,-.86)],.0045,green,plant)
 for j in range(7):
     y=1.45+j*.052; a=j*2.4
     end=(1.1+math.cos(a)*.22,y+.11,-.88+math.sin(a)*.15)
     leaf('Seedling leaf',(1.10,y,-.88),end,.075,green if j%2 else leaflight,plant)
 
-# Rounded watering can: open top, hollow short spout, arch handle.
-lathe('Can body',(1.91,1.085,-.85),[(0,0),(.16,0),(.205,.045),(.22,.19),(.18,.30),(.13,.34),(.11,.34),(.105,.30),(.17,.27)],canmat,can)
+# Enamel can with rolled filling lip, tapered spout and perforated brass rose.
+lathe('Can body',(1.91,1.085,-.85),[(0,0),(.155,0),(.185,.018),(.198,.045),(.215,.19),(.178,.30),(.126,.333),(.127,.343),(.115,.349),(.105,.342),(.107,.326),(.17,.27)],canmat,can)
 lathe('Can dark opening',(1.91,1.085,-.85),[(0,.285),(.107,.285)],dark,can)
-tube('Can carrying arch',[(1.91,1.34,-1.04),(1.91,1.62,-.88),(1.91,1.36,-.64)],.025,canmat,can)
-tube('Can side handle',[(2.08,1.36,-.85),(2.31,1.38,-.85),(2.36,1.19,-.85),(2.10,1.13,-.85)],.025,canmat,can)
-tube('Can spout',[(1.75,1.18,-.85),(1.58,1.31,-.85),(1.47,1.49,-.85)],.045,canmat,can)
-sphere('Can rose nozzle',(1.46,1.50,-.85),(.065,.055,.075),canmat,can)
-for dz in (-.035,0,.035): sphere('Nozzle hole',(1.414,1.53,-.85+dz),(.006,.006,.007),dark,can)
+tube('Can carrying arch',[(1.91,1.34,-1.025),(1.91,1.55,-.99),(1.91,1.57,-.78),(1.91,1.36,-.66)],.018,canmat,can)
+tube('Can side handle',[(2.08,1.36,-.85),(2.29,1.38,-.85),(2.34,1.20,-.85),(2.10,1.13,-.85)],.019,canmat,can)
+tube('Tapered can spout',[(1.75,1.18,-.85),(1.58,1.31,-.85),(1.47,1.49,-.85)],.043,canmat,can,radii=[1,.78,.48])
+axis=Vector((-.55,.835,0)).normalized();across=Vector((0,0,1));up=axis.cross(across)
+tip=Vector((1.47,1.49,-.85));verts=[];faces=[]
+for t,r in ((-.015,.022),(.015,.030),(.047,.068),(.057,.070),(.061,.063)):
+    for i in range(33):
+        a=i/32*math.tau;verts.append(tuple(tip+axis*t+(across*math.cos(a)+up*math.sin(a))*r))
+for j in range(4):
+    for i in range(32):k=j*33+i;faces.append((k,k+33,k+34,k+1))
+faces.append(tuple(range(4*33,5*33)))
+mesh('Formed brass watering rose',verts,faces,brass,can)
+for r,count in ((0,1),(.024,6),(.049,12)):
+    for i in range(count):
+        a=i/count*math.tau;c=tip+axis*.0615+(across*math.cos(a)+up*math.sin(a))*r
+        points=[tuple(c)]+[tuple(c+(across*math.cos(t)+up*math.sin(t))*.003)
+                         for t in np.linspace(0,math.tau,9)]
+        mesh('Recessed sprinkler perforation',points,[(0,j,j+1) for j in range(1,9)],dark,can,smooth=False)
 
 for name,pos in [('window_anchor',(1.05,2.15,-2.0)),('room_target',(0,1.30,-.28)),
                  ('desk_target',(1.40,1.55,-.90)),('pot_target',(1.10,1.48,-.88))]:
     empty(name,pos,bedroom)
 
 # Apply bevels and merge material batches within each independent root.
-for parent in (shell,desk,pot,plant,can,cleft,cright):
+for parent in (shell,desk,pot,plant,can,cleft,cright,backdrop):
     buckets={}
     for o in list(parent.children):
         if o.type=='MESH': buckets.setdefault(o.data.materials[0].name,[]).append(o)

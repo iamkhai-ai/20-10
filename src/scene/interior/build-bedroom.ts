@@ -12,6 +12,23 @@ export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
   const group = model.group;
   group.visible = false;
   group.updateWorldMatrix(true, true);
+  // Exterior scenery is a window view, not an occluder of the room's daylight.
+  group.traverse((object) => {
+    const name = object.userData.name ?? object.name;
+    if (name === 'window_backdrop') object.traverse((child) => {
+      if (child instanceof THREE.Mesh) child.castShadow = child.receiveShadow = false;
+    });
+    if (object instanceof THREE.Mesh) {
+      const materials = Array.isArray(object.material) ? object.material : [object.material];
+      for (const material of materials) {
+        if (material instanceof THREE.MeshStandardMaterial) {
+          material.aoMapIntensity = material.name === 'Warm limewash' ? 0.22 :
+            ['Hand thrown clay', 'Unbleached linen', 'Ivory cotton', 'Dusty rose quilt',
+              'Sage woven throw'].includes(material.name) ? 0.32 : 0.48;
+        }
+      }
+    }
+  });
   const roomTarget = model.nodes.room_target.getWorldPosition(new THREE.Vector3());
   const deskTarget = model.nodes.desk_target.getWorldPosition(new THREE.Vector3());
   const windowTarget = model.nodes.window_anchor.getWorldPosition(new THREE.Vector3());

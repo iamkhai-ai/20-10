@@ -2,8 +2,9 @@
 
 ## Milestone 2 bedroom source
 
-The original bedroom is authored separately in `create-bedroom.py` and
-`bedroom.blend`. Rebuild from the repository root with the same Blender:
+The original bedroom is authored separately in `create-bedroom.py`, its
+`bedroom_surfaces.py` surface/bake helper, and `bedroom.blend`. Rebuild from
+the repository root with the same Blender:
 
 ```powershell
 & $blenderExe --background --factory-startup --python assets/blender/create-bedroom.py
@@ -12,6 +13,13 @@ The original bedroom is authored separately in `create-bedroom.py` and
 Optional source preview: append `-- --preview C:\absolute\path\room.png`.
 The preview rig is excluded from the runtime GLB. Carry manual edits back
 into the script before rebuilding. No project Python dependency is needed.
+Blender's bundled NumPy generates the packed local albedo, tangent normal
+and roughness maps. UV0 uses material-scale mapping; UV1 holds a 1024px
+static AO atlas baked with Cycles at 48 samples. The export may take a few
+minutes. Thin piping uses a small cross-section to preserve the budget.
+The can, plant, curtains, glass and optional `window_backdrop` are excluded
+from casting permanent baked shadows. The runtime keeps that backdrop
+from casting/receiving real-time shadows, so it cannot block daylight.
 
 Room-local coordinates are X-right, Y-up, Z-front, with floor Y=0 and the
 rear window wall Z=-2.1. `bedroom` is the static root. `room_shell`, `desk`,
@@ -24,9 +32,19 @@ does not rotate the entire fabric around the room origin. `window_anchor`,
 a separate scene group during the concealed handoff; no exterior offset
 is applied to it.
 
-The room export has 39,140 triangles, 29 primitives, 19 materials and
-9 embedded images (2,186,796 bytes). Final GLB SHA-256:
-`c8e614b801a0c41a7e11d1f7f3a275f4e62eea8876a042f1e13bb79f0776b2f6`.
+The current visual revision uses sewn cushions, naturally draped milk-cream bedding,
+staggered oak boards, tapered desk legs, shaped leaves and a tapered can
+spout with a perforated brass rose. The rounded planter has butter-yellow
+glaze, a cream rim/saucer and small painted rose flowers. Upper walls are
+clean mist blue, paneling light sage and floorboards neutral blond oak,
+following the user's latest color feedback. Material names such as
+`Hand thrown clay`, `Dusty rose quilt` and `Warm limewash` remain stable for validation even
+though their palette changed. Three.js owns the window-directed sunlight;
+baked occlusion is attenuated for a clean wall finish.
+
+The room export has 45,273 triangles, 37 primitives, 24 materials and
+26 embedded images (4,890,040 bytes). Final GLB SHA-256:
+`fb52c2c96bb364442b465ff6ff55c9e01329cf9cbfa40bd5fdc0dec103070e56`.
 Validate actual packed resource,
 hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
 The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.

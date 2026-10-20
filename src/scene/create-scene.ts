@@ -58,12 +58,12 @@ export function createScene(host: HTMLElement): SceneRuntime {
     const interior = location === 'bedroom';
     scene.background = interior ? roomBackground : sky;
     scene.fog = interior ? null : exteriorFog;
-    scene.environmentIntensity = interior ? 0.8 : 0.7;
-    ambient.intensity = interior ? 0.9 : 0.75;
-    fill.intensity = interior ? 0.65 : 0.35;
-    key.intensity = interior ? 2.0 : 2.1;
-    key.position.set(interior ? 3.8 : 8, interior ? 7 : 12, interior ? 1.5 : 6);
-    key.target.position.set(0, interior ? 1 : 0, 0);
+    scene.environmentIntensity = interior ? 0.55 : 0.7;
+    ambient.intensity = interior ? 0.5 : 0.75;
+    fill.intensity = interior ? 0.4 : 0.35;
+    key.intensity = interior ? 3.2 : 2.1;
+    key.position.set(interior ? 2.5 : 8, interior ? 6 : 12, interior ? -4 : 6);
+    key.target.position.set(interior ? 0.5 : 0, interior ? 1 : 0, interior ? -0.5 : 0);
     const extent = interior ? 5 : 10;
     Object.assign(key.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent,
       far: interior ? 25 : 40 });

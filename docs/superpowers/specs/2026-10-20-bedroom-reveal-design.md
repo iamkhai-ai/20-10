@@ -48,15 +48,25 @@ static baked contact occlusion; keep movable props from baking persistent
 contact shadows onto the desk. The existing asset caps, packed resources,
 motion/accessibility behavior, and M2 endpoint remain in force.
 
+The user's subsequent visual feedback asks for a prettier planter with a
+more suitable desk silhouette, a different wall color with a clean finish,
+and a more attractive floor color. Use a low rounded butter-yellow glazed
+planter with a cream rim/saucer and small rose flower motifs, very pale
+mist-blue upper walls, lighter sage paneling and neutral blond oak boards.
+Reduce wall mottling and broad baked darkening. The new interior palette
+replaces the earlier terracotta-pot/ivory-wall shorthand for this revision.
+The user also rejected the rose quilt color; use milk-cream bedding with
+the sage throw. Keep the planter glaze smooth, with restrained relief.
+
 ### Room view
 
-Use a compact dollhouse cutaway room with a warm ivory upper wall, muted sage lower paneling, slim painted skirting, and a pale oak floor. Remove the camera-facing wall from the composition rather than allowing the camera to enter a solid box. Keep the ceiling open in the cutaway view so it does not obscure the desk or darken the room.
+Use a compact dollhouse cutaway room with a clean mist-blue upper wall, light sage lower paneling, slim painted skirting, and a neutral blond oak floor. Remove the camera-facing wall from the composition rather than allowing the camera to enter a solid box. Keep the ceiling open in the cutaway view so it does not obscure the desk or darken the room.
 
 Place the double window on the rear wall, slightly to the right in the settled room composition. Match its proportions and ivory trim to the exterior's signature window. Folded linen curtains hang beside the opening; a soft patch of sunlight connects the window to the desk and floor.
 
 The desk sits immediately beside and slightly in front of the window. The window remains visible behind or beside it in the room view. The desk's front edge, a tucked-in chair, and the pot form the principal foreground group. The chair must not block the plant or can.
 
-Put a compact bed along the left wall, receding toward the back of the scene. Use an upholstered or curved painted headboard, an ivory mattress edge, a dusty rose quilt with a folded sage throw, and two plump pillows. Model the bedding with rounded volume and gentle seam/fold detail rather than flat stacked slabs.
+Put a compact bed along the left wall, receding toward the back of the scene. Use an upholstered or curved painted headboard, an ivory mattress edge, a milk-cream quilt with a folded sage throw, and two plump pillows. Model the bedding with rounded volume and gentle seam/fold detail rather than flat stacked slabs.
 
 A rounded rug sits between the bed and desk. Place one small shelf above or behind the bed with a few books and one neutral framed botanical picture. A small plush or fabric cushion may add a personal touch; avoid readable names, photographs, invented memories, and an inventory of unrelated props.
 
@@ -64,7 +74,7 @@ A rounded rug sits between the bed and desk. Place one small shelf above or behi
 
 Use a pale oak desktop with beveled edges, visible thickness, slim drawer fronts, restrained joinery, and a curved or softly tapered leg profile. A small lamp contributes a warm pool of light from a side corner. Two or three closed books or a notebook may support the setting without occupying the plant's clear space.
 
-Place the handmade terracotta pot in the brightest, least cluttered part of the surface. Include a readable rim, wall thickness, dark soil, and a modest leafy seedling. The plant is a resting pre-bloom state: no tulips or greeting card appear yet.
+Place the rounded butter-yellow glazed pot in the brightest, least cluttered part of the surface. Include a cream rim and saucer, small rose flower motifs, wall thickness, dark soil, and a modest leafy seedling. The plant is a resting pre-bloom state: no tulips or greeting card appear yet.
 
 Place a rounded sage watering can to the pot's right, separated enough that both silhouettes are visible. Include a curved handle, short angled spout, open filling rim, and soft satin highlights. Its spout should suggest its purpose without appearing to pour water. The can and pot need separate scene nodes for M3 to animate them later.
 

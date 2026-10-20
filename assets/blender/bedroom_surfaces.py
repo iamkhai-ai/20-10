@@ -65,15 +65,15 @@ def surface(name, color, roughness=.8, kind=None, emission=0):
         h=(warp+weft)*.026 + fine*.01
         variation=(warp+weft)*.006 + broad*.015
     elif kind=='ceramic':
-        h=np.sin(yy*math.tau*90)*.006 + fine*.06 + broad*.02
-        variation=broad*.035+fine*.025
+        h=np.sin(yy*math.tau*90)*.002 + fine*.006 + broad*.002
+        variation=broad*.006+fine*.004
     elif kind=='soil':
         h=noise(n,48,12)*.18+fine*.12
         variation=broad*.025+fine*.035
     elif kind=='enamel':
         h=fine*.007+broad*.004;variation=broad*.008
     else:
-        h=fine*.02+broad*.007;variation=broad*.012
+        h=fine*.004+broad*.002;variation=broad*.004
     base=np.clip(np.array(color)[None,None,:]+variation[:,:,None],0,1)
     tex=texture(m,image(name+' albedo',base[::2,::2] if kind=='fabric' else base))
     m.node_tree.links.new(tex.outputs['Color'],bsdf.inputs['Base Color'])
@@ -82,7 +82,7 @@ def surface(name, color, roughness=.8, kind=None, emission=0):
     normal/=np.linalg.norm(normal,axis=2,keepdims=True)
     norm=texture(m,image(kind+' tangent normal',normal*.5+.5,True))
     node=m.node_tree.nodes.new('ShaderNodeNormalMap');node.uv_map='UVMap'
-    node.inputs['Strength'].default_value={'wood':.7,'fabric':.6,'ceramic':.5,'soil':.7,'enamel':.3}.get(kind,.35)
+    node.inputs['Strength'].default_value={'wood':.7,'fabric':.6,'ceramic':.2,'soil':.7,'enamel':.3}.get(kind,.35)
     m.node_tree.links.new(norm.outputs['Color'],node.inputs['Color'])
     m.node_tree.links.new(node.outputs['Normal'],bsdf.inputs['Normal'])
     # Different resolution from the AO atlas keeps its UV set separate in glTF.
