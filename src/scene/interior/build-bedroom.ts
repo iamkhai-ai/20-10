@@ -70,6 +70,8 @@ export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
   const watering: BedroomWateringRig = { room: group, can, pot: model.nodes.plant_pot,
     plant: model.nodes.plant_rest, outlet, soilTarget, soilRadius: 0.14,
     outletDirection: new THREE.Vector3(-0.55, 0.835, 0).normalize().transformDirection(inverse) };
+  // Calibrate in authored coordinates first, then resize the complete prop and outlet together.
+  can.scale.multiplyScalar(0.82);
   return { group, watering, swayTargets: [model.nodes.curtain_left, model.nodes.curtain_right],
     cameraPoses: (aspect) => aspect < 0.85 ? portrait : landscape };
 }

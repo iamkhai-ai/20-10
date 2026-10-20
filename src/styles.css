@@ -83,9 +83,15 @@ body {
 #card-panel { display: grid; gap: 12px; padding: 17px; border: 1px solid #cdbfa8; border-radius: 15px; background: rgba(250,246,235,.94); pointer-events: auto; }
 #card-panel[hidden] { display: none; }
 #card-panel p { margin: 0; font-size: .88rem; line-height: 1.5; }
-#gift-dialog { width: min(560px,calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid #c7ae86; border-radius: 6px; background: #fcf4e5; color: #34463a; overflow: auto; box-shadow: 0 24px 100px #182b3266; }
+#gift-dialog { width: min(850px,calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid #c7ae86; border-radius: 8px; background: #fcf4e5; color: #34463a; overflow: auto; box-shadow: 0 24px 100px #182b3266; }
 #gift-dialog::backdrop { background: rgba(36,48,42,.48); backdrop-filter: blur(5px); }
-.gift-paper { margin: 12px; padding: clamp(22px,5vw,40px); border: 1px solid #dbc5a4; background-image: repeating-linear-gradient(0deg,transparent 0 3px,#bfa67c05 4px 5px); }
+.gift-book { display: grid; grid-template-columns: minmax(200px,.9fr) minmax(0,1.7fr); }
+.gift-cover { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 30px 20px; border: 10px solid #f5e7d9; outline: 1px solid #b79468; outline-offset: -17px; background: linear-gradient(120deg,#e3c0c0,#f0d8ce 60%,#d8b4b8); box-shadow: inset -10px 0 20px #7e526524; overflow: hidden; }
+.gift-cover img { width: 100%; max-width: 220px; height: auto; margin: -8px 0 -18px; }
+.gift-cover-date { margin: 0; color: #805665; font: 1rem Georgia,serif; letter-spacing: .3em; }
+.gift-cover-title { margin: 0 0 20px; font: italic 1.15rem/1.4 Georgia,serif; color: #744c5b; text-align: center; }
+.gift-seal { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 50%; border: 3px double #e6b6b0; background: #a97180; color: #f3d3c5; box-shadow: 0 2px 5px #73425324; font-size: 1.3rem; }
+.gift-paper { position: relative; margin: 0; padding: clamp(24px,4vw,40px); border-left: 1px solid #d2b998; background-image: repeating-linear-gradient(0deg,transparent 0 3px,#bfa67c05 4px 5px); box-shadow: inset 10px 0 18px -18px #60472c; }
 .gift-date { margin: 0 0 18px; color: #9c6171; font-family: Georgia,serif; font-size: .95rem; letter-spacing: .3em; }
 .gift-paper h2 { margin: 0 0 28px; font-family: Georgia,"Times New Roman",serif; font-size: clamp(1.65rem,5vw,2.3rem); line-height: 1.12; font-weight: 500; letter-spacing: -.035em; }
 .gift-salutation { font-family: Georgia,serif; font-style: italic; font-size: 1.2rem; }
@@ -147,6 +153,16 @@ button:focus-visible {
 }
 
 @media (max-width: 520px) {
+  .gift-book { display: block; }
+  .gift-cover { height: 132px; align-items: flex-start; padding: 24px 20px; border-width: 7px; outline-offset: -13px; }
+  .gift-cover img { position: absolute; width: 125px; right: 15px; bottom: -31px; margin: 0; }
+  .gift-cover-date { font-size: .85rem; margin-bottom: 12px; }
+  .gift-cover-title { max-width: 140px; margin: 0; font-size: 1rem; text-align: left; }
+  .gift-seal { display: none; }
+  .gift-paper { border-left: 0; border-top: 1px solid #d2b998; padding: 24px; }
+  .gift-paper h2 { margin-bottom: 20px; }
+  .gift-date { margin-bottom: 14px; }
+  .gift-letter { font-size: .93rem; line-height: 1.7; margin-bottom: 20px; }
   #watering-panel, #card-panel {
     position: fixed;
     left: calc(16px + var(--safe-left));

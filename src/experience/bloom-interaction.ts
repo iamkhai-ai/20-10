@@ -1,10 +1,11 @@
 import * as THREE from 'three';
 import type { BedroomBuildResult } from '../scene/interior/build-bedroom';
-import { createBloomView, bloomDuration } from '../scene/interior/build-bloom';
+import { createBloomView, bloomDuration, flowerDuration } from '../scene/interior/build-bloom';
 import { createCardControls } from '../ui/card-controls';
 import { bloomCopy } from '../content/gift-message';
 
 export interface BloomInteraction {
+  setWateringProgress(value: number): void;
   start(): void;
   update(now: number): void;
   setAvailable(value: boolean): void;
@@ -23,7 +24,7 @@ export function createBloomInteraction(options: {
   const status = document.querySelector<HTMLElement>('#status')!;
   const raycaster = new THREE.Raycaster(), pointer = new THREE.Vector2(), hits: THREE.Intersection[] = [];
   let started = false, finished = false, available = false, disposed = false;
-  let elapsed = 0, last: number | null = null, reducedMotion = options.reducedMotion;
+  let growth = 0, elapsed = flowerDuration, last: number | null = null, reducedMotion = options.reducedMotion;
   let down: { id: number; x: number; y: number } | null = null;
   const originalCursor = canvas.style.cursor;
   const pick = (event: PointerEvent) => {
@@ -53,12 +54,20 @@ export function createBloomInteraction(options: {
   canvas.addEventListener('lostpointercapture', cancel); window.addEventListener('blur', cancel);
   window.addEventListener('pointerup', cancel); document.addEventListener('visibilitychange', visibility);
   return {
+    setWateringProgress(value) {
+      if (disposed || started || !Number.isFinite(value)) return;
+      growth = Math.max(growth, THREE.MathUtils.clamp(value, 0, 1));
+    },
     start() {
       if (disposed || started || !available) return;
-      started = true; last = null; status.textContent = bloomCopy.blooming; view.setProgress(0);
+      growth = 1; started = true; last = null; status.textContent = bloomCopy.blooming; view.setProgress(flowerDuration);
     },
     update(now) {
-      if (disposed || !started) return;
+      if (disposed) return;
+      if (!started) {
+        if (available && growth > 0) view.setProgress(growth * flowerDuration);
+        return;
+      }
       if (!available || document.hidden || !Number.isFinite(now)) { last = null; return; }
       if (!finished) {
         if (reducedMotion) elapsed = bloomDuration;

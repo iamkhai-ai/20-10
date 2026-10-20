@@ -5,6 +5,7 @@ import { createWateringControls, type WateringControls } from '../ui/watering-co
 import { createWateringState } from './watering-state';
 
 export interface WateringInteraction {
+  readonly progress: number;
   setAvailable(value: boolean): void;
   update(now: number): void;
   pause(): void;
@@ -90,6 +91,7 @@ export function createWateringInteraction(options: {
   window.addEventListener('blur', blur); document.addEventListener('visibilitychange', visibility);
   window.addEventListener('keydown', key);
   return {
+    get progress() { return state.snapshot().progress; },
     setAvailable(value) {
       if (disposed) return;
       if (!value) stop(true);

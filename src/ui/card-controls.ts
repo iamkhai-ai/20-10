@@ -17,20 +17,32 @@ export function createCardControls(): CardControls {
   button.textContent = bloomCopy.open; button.setAttribute('aria-haspopup', 'dialog');
   const dialog = document.createElement('dialog'); dialog.id = 'gift-dialog';
   dialog.setAttribute('aria-labelledby', 'gift-title');
+  const book = document.createElement('div'); book.className = 'gift-book';
+  const cover = document.createElement('aside'); cover.className = 'gift-cover'; cover.setAttribute('aria-hidden', 'true');
+  const coverDate = document.createElement('p'); coverDate.className = 'gift-cover-date'; coverDate.textContent = giftMessage.date;
+  const illustration = document.createElement('img'); illustration.src = '/art/tulip-botanical.svg'; illustration.alt = '';
+  illustration.width = 260; illustration.height = 360;
+  const coverTitle = document.createElement('p'); coverTitle.className = 'gift-cover-title'; coverTitle.textContent = giftMessage.coverTitle;
+  const seal = document.createElement('span'); seal.className = 'gift-seal'; seal.textContent = '✿';
+  cover.append(coverDate, illustration, coverTitle, seal);
   const page = document.createElement('article'); page.className = 'gift-paper';
   const date = document.createElement('p'); date.className = 'gift-date'; date.textContent = giftMessage.date;
   const title = document.createElement('h2'); title.id = 'gift-title'; title.textContent = giftMessage.title;
+  title.tabIndex = -1;
   const salutation = document.createElement('p'); salutation.className = 'gift-salutation'; salutation.textContent = giftMessage.salutation;
   const body = document.createElement('div'); body.className = 'gift-letter';
   for (const text of giftMessage.paragraphs) {
     const paragraph = document.createElement('p'); paragraph.textContent = text; body.append(paragraph);
   }
   const close = document.createElement('button'); close.type = 'button'; close.textContent = bloomCopy.close;
-  close.autofocus = true;
-  page.append(date, title, salutation, body, close); dialog.append(page);
+  page.append(date, title, salutation, body, close); book.append(cover, page); dialog.append(book);
   panel.append(hint, button); host.append(panel); document.body.append(dialog);
   let ready = false, disposed = false;
-  const open = () => { if (ready && !disposed && !dialog.open) { dialog.showModal(); close.focus(); } };
+  const open = () => {
+    if (ready && !disposed && !dialog.open) {
+      dialog.showModal(); title.focus({ preventScroll: true }); dialog.scrollTop = 0;
+    }
+  };
   const closeDialog = () => dialog.close();
   const restore = () => { if (!disposed) (ready ? button : status).focus({ preventScroll: true }); };
   const repeat = (event: KeyboardEvent) => {

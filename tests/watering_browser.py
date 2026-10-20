@@ -355,6 +355,24 @@ class ViewChecks(BrowserCase):
         self.assertGreaterEqual(r[0],1.25);self.assertLessEqual(r[0],2)
         self.assertGreaterEqual(r[2],-1.0);self.assertLessEqual(r[2],-.65)
 
+    def test_smaller_can_and_multiple_jets_land_inside_soil(self):
+        r=self.page.evaluate("""()=>{
+          const {view,rig,THREE}=probe;view.aimAutomatically();view.render(400,true,.4);
+          const jets=probe.effects().getObjectByName('watering-stream');
+          const matrix=new THREE.Matrix4(),v=new THREE.Vector3();const endpoints=[];
+          if(jets.isInstancedMesh)for(let i=0;i<jets.count;i++){
+            jets.getMatrixAt(i,matrix);endpoints.push(v.set(0,-.5,0).applyMatrix4(matrix).toArray());
+          }
+          const valid=view.isValidAim();rig.can.position.x+=.05;const edge=view.isValidAim();
+          return {small:rig.can.scale.toArray(),count:jets.count??1,valid,edge,endpoints};
+        }""")
+        self.assertTrue(r['valid']);self.assertGreaterEqual(r['count'],7);self.assertLessEqual(r['count'],12)
+        self.assertFalse(r['edge'])
+        self.assertTrue(all(v<1 for v in r['small']))
+        for x,y,z in r['endpoints']:
+            self.assertAlmostEqual(y,1.405,places=3)
+            self.assertLessEqual((x-1.1)**2+(z+.88)**2,.14**2)
+
 
 if __name__=='__main__':
     unittest.main(verbosity=2)

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 260 360" fill="none">
+  <defs>
+    <linearGradient id="rose" x1="60" y1="60" x2="130" y2="190" gradientUnits="userSpaceOnUse"><stop stop-color="#efc4c7"/><stop offset=".55" stop-color="#c77e92"/><stop offset="1" stop-color="#94566c"/></linearGradient>
+    <linearGradient id="cream" x1="170" y1="80" x2="180" y2="170" gradientUnits="userSpaceOnUse"><stop stop-color="#fff1d8"/><stop offset="1" stop-color="#d8b58b"/></linearGradient>
+    <linearGradient id="leaf" x1="80" y1="220" x2="170" y2="310" gradientUnits="userSpaceOnUse"><stop stop-color="#9dadaa"/><stop offset=".5" stop-color="#788e76"/><stop offset="1" stop-color="#536f62"/></linearGradient>
+  </defs>
+  <path d="M112 326C125 263 130 209 115 133M136 325C146 259 151 208 176 157M127 326C111 273 88 226 73 198" stroke="#5c7964" stroke-width="3.5" stroke-linecap="round"/>
+  <path d="M126 305C78 289 63 252 60 216C103 232 123 265 126 305Z" fill="url(#leaf)"/>
+  <path d="M134 315C172 271 190 245 190 202C151 218 136 266 134 315Z" fill="url(#leaf)"/>
+  <path d="M122 279C114 242 130 204 148 187C156 226 141 260 122 279Z" fill="#8ca18a"/>
+  <path d="M75 198C52 189 43 170 50 149L70 161L81 143C97 160 98 188 75 198Z" fill="url(#rose)"/>
+  <path d="M115 139C89 133 76 104 84 75L106 90L118 60L131 88L149 72C156 102 142 130 115 139Z" fill="url(#rose)"/>
+  <path d="M114 137C98 115 101 88 118 60C136 88 137 118 114 137Z" fill="#dba0ad"/>
+  <path d="M176 162C154 154 145 131 154 108L172 120L186 96L195 121L210 112C214 139 197 161 176 162Z" fill="url(#cream)"/>
+  <path d="M177 158C168 140 171 117 186 96C197 121 193 144 177 158Z" fill="#eed8b6"/>
+  <path d="M118 138C106 111 110 89 118 73M177 159C177 139 182 118 186 109M124 302C103 269 80 240 68 227M138 305C159 273 177 234 185 214" stroke="#f3e3c8" stroke-opacity=".45" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M96 323L150 329M100 332L145 323" stroke="#b68b57" stroke-width="2" stroke-linecap="round"/>
+  <circle cx="51" cy="99" r="2" fill="#bd965f"/><circle cx="208" cy="185" r="2.5" fill="#bd965f"/><circle cx="152" cy="47" r="1.5" fill="#bd965f"/>
+</svg>

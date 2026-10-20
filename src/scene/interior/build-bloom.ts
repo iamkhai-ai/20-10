@@ -2,7 +2,8 @@ import * as THREE from 'three';
 import type { BedroomWateringRig } from './build-bedroom';
 import { giftMessage } from '../../content/gift-message';
 
-export const bloomDuration = 4400;
+export const flowerDuration = 3800;
+export const bloomDuration = 4700;
 export interface BloomView {
   group: THREE.Group;
   card: THREE.Group;
@@ -55,16 +56,35 @@ function leafGeometry(): THREE.BufferGeometry {
 function cardTexture(): THREE.CanvasTexture {
   const canvas = document.createElement('canvas'); canvas.width = 768; canvas.height = 512;
   const ctx = canvas.getContext('2d'); if (!ctx) throw new Error('Paper texture is unavailable.');
-  ctx.fillStyle = '#fcf4e5'; ctx.fillRect(0, 0, 768, 512);
-  ctx.strokeStyle = '#c8a66e'; ctx.lineWidth = 3; ctx.strokeRect(26, 26, 716, 460);
-  ctx.lineWidth = 1; ctx.strokeRect(37, 37, 694, 438);
-  ctx.textAlign = 'center'; ctx.fillStyle = '#925c69'; ctx.font = '104px Georgia, serif';
-  ctx.fillText(giftMessage.date, 384, 250);
-  ctx.fillStyle = '#4d6755'; ctx.font = 'italic 38px Georgia, serif'; ctx.fillText(giftMessage.cardCaption, 384, 328);
-  // A small pressed-tulip mark, drawn into the paper rather than a new mesh.
-  ctx.strokeStyle = '#6d8763'; ctx.lineWidth = 5; ctx.beginPath(); ctx.moveTo(384, 164); ctx.lineTo(384, 112); ctx.stroke();
-  ctx.fillStyle = '#d39ca6'; ctx.beginPath(); ctx.moveTo(361, 90); ctx.quadraticCurveTo(384, 148, 407, 90);
-  ctx.lineTo(396, 98); ctx.lineTo(384, 82); ctx.lineTo(372, 98); ctx.closePath(); ctx.fill();
+  ctx.fillStyle = '#fbf1e1'; ctx.fillRect(0, 0, 768, 512);
+  ctx.fillStyle = '#ecd0cd'; ctx.fillRect(18, 18, 732, 476);
+  ctx.fillStyle = '#fcf4e7'; ctx.beginPath(); ctx.roundRect(57, 39, 654, 434, 150); ctx.fill();
+  ctx.strokeStyle = '#b9955f'; ctx.lineWidth = 2.5; ctx.strokeRect(31, 31, 706, 450);
+  ctx.lineWidth = 1; ctx.strokeRect(40, 40, 688, 432);
+  // Botanical corner sprigs are part of the printed paper surface.
+  for (let side = 0; side < 2; side++) {
+    ctx.save(); if (side) { ctx.translate(768, 512); ctx.rotate(Math.PI); }
+    ctx.strokeStyle = '#6d8268'; ctx.lineWidth = 4;
+    ctx.beginPath(); ctx.moveTo(77, 401); ctx.bezierCurveTo(113, 332, 116, 244, 92, 162); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(87, 382); ctx.bezierCurveTo(155, 352, 158, 294, 153, 255); ctx.stroke();
+    for (let j = 0; j < 4; j++) {
+      const y = 249 + j * 34;
+      ctx.fillStyle = j % 2 ? '#8da087' : '#718a71'; ctx.beginPath();
+      ctx.moveTo(108, y+25); ctx.quadraticCurveTo(j%2 ? 58 : 156, y-17, j%2 ? 79 : 141, y-29);
+      ctx.quadraticCurveTo(119, y-7, 108, y+25); ctx.fill();
+    }
+    ctx.fillStyle = '#d197a5'; ctx.beginPath(); ctx.moveTo(66, 139); ctx.lineTo(85, 154);
+    ctx.lineTo(96, 126); ctx.lineTo(110, 152); ctx.lineTo(128, 139);
+    ctx.bezierCurveTo(131, 195, 65, 196, 66, 139); ctx.fill();
+    ctx.fillStyle = '#e1b3bb'; ctx.beginPath(); ctx.ellipse(97, 163, 12, 29, -.08, 0, Math.PI*2); ctx.fill();
+    ctx.restore();
+  }
+  ctx.textAlign = 'center'; ctx.fillStyle = '#a97564'; ctx.font = 'italic 33px Georgia, serif';
+  ctx.fillText(giftMessage.coverTitle, 384, 176);
+  ctx.fillStyle = '#875264'; ctx.font = '92px Georgia, serif'; ctx.fillText(giftMessage.date, 384, 282);
+  ctx.fillStyle = '#4d6755'; ctx.font = 'italic 35px Georgia, serif'; ctx.fillText(giftMessage.cardCaption, 384, 344);
+  ctx.fillStyle = '#ac6f7e'; ctx.beginPath(); ctx.arc(384, 411, 22, 0, Math.PI*2); ctx.fill();
+  ctx.strokeStyle = '#e9c7bd'; ctx.lineWidth = 1.5; ctx.beginPath(); ctx.arc(384, 411, 15, 0, Math.PI*2); ctx.stroke();
   const texture = new THREE.CanvasTexture(canvas); texture.colorSpace = THREE.SRGBColorSpace;
   texture.anisotropy = 4; return texture;
 }
@@ -106,15 +126,24 @@ export function createBloomView(rig: BedroomWateringRig, camera: THREE.Perspecti
     group.add(flower); flowers.push({ stem, head, leaves, petals: flowerPetals, height });
   }
   const card = new THREE.Group(); card.name = 'bloom-card'; card.position.set(0, .35, .10); card.visible = false;
-  const shape = new THREE.Shape(); const w = .25, h = .18, r = .009;
+  const shape = new THREE.Shape(); const w = .28, h = .20, r = .009;
   shape.moveTo(-w/2+r,-h/2); shape.lineTo(w/2-r,-h/2); shape.quadraticCurveTo(w/2,-h/2,w/2,-h/2+r);
   shape.lineTo(w/2,h/2-r); shape.quadraticCurveTo(w/2,h/2,w/2-r,h/2); shape.lineTo(-w/2+r,h/2);
   shape.quadraticCurveTo(-w/2,h/2,-w/2,h/2-r); shape.lineTo(-w/2,-h/2+r); shape.quadraticCurveTo(-w/2,-h/2,-w/2+r,-h/2);
-  const stock = new THREE.Mesh(ownGeometry(new THREE.ExtrudeGeometry(shape, { depth: .003, bevelEnabled: false })),
+  const paperGeometry = ownGeometry(new THREE.ExtrudeGeometry(shape, { depth: .003, bevelEnabled: true,
+    bevelSize: .0007, bevelThickness: .0007, bevelSegments: 1, steps: 1 }));
+  const stock = new THREE.Mesh(paperGeometry,
     ownMaterial(new THREE.MeshStandardMaterial({ color: 0xf8ebd4, roughness: .85 })));
+  const cover = new THREE.Mesh(paperGeometry,
+    ownMaterial(new THREE.MeshStandardMaterial({ color: 0xc7919e, roughness: .72 })));
+  cover.position.set(-.001, 0, -.006); cover.rotation.y = -.09; cover.scale.setScalar(1.025);
   const front = new THREE.Mesh(ownGeometry(new THREE.PlaneGeometry(w-.006,h-.006)),
     ownMaterial(new THREE.MeshStandardMaterial({ map: texture, roughness: .86, side: THREE.DoubleSide })));
-  front.position.z = .0035; card.add(stock, front); group.add(card);
+  front.position.z = .0045;
+  const spine = new THREE.Mesh(ownGeometry(new THREE.CylinderGeometry(.0018,.0018,h-.012,8)),
+    ownMaterial(new THREE.MeshStandardMaterial({ color: 0xb79865, roughness: .38, metalness: .35 })));
+  spine.position.set(-w/2+.002,0,-.003);
+  card.add(cover, stock, front, spine); group.add(card);
   rig.room.add(group);
   const cameraPosition = new THREE.Vector3(); let disposed = false;
   return {
@@ -135,7 +164,7 @@ export function createBloomView(rig: BedroomWateringRig, camera: THREE.Perspecti
         const open = smooth((elapsed - 1700 - i * 160) / 1400);
         for (let k = 0; k < flower.petals.length; k++) flower.petals[k].rotation.x = open * (k % 2 ? .32 : .54);
       }
-      const reveal = smooth((elapsed - 3450) / 950); card.visible = reveal > 0;
+      const reveal = smooth((elapsed - flowerDuration) / (bloomDuration - flowerDuration)); card.visible = reveal > 0;
       card.scale.setScalar(Math.max(.001, reveal)); card.position.y = .29 + reveal * .06;
       camera.getWorldPosition(cameraPosition); card.lookAt(cameraPosition); card.rotateZ((1-reveal) * -.12);
     },

@@ -38,7 +38,7 @@ class BloomChecks(BrowserCase):
           const {view,rig}=probe;const rest=rig.plant.scale.toArray();
           view.setProgress(0);const first=view.card.visible;
           view.setProgress(1700);const middle=view.card.visible;
-          view.setProgress(4400);const final=view.card.visible;
+          view.setProgress(4700);const final=view.card.visible;
           const petals=[];view.group.traverse(o=>{if(o.name==='tulip-petal')petals.push(o.rotation.x)});
           const geometries=new Set();const materials=new Set();view.group.traverse(o=>{
             if(o.isMesh){geometries.add(o.geometry);for(const m of(Array.isArray(o.material)?o.material:[o.material]))materials.add(m)}
@@ -58,7 +58,7 @@ class BloomChecks(BrowserCase):
         result=self.page.evaluate("""async()=>{
           probe.view.dispose();const {createBloomInteraction}=await import('/src/experience/bloom-interaction.ts');
           const bloom=createBloomInteraction({canvas:probe.canvas,camera:probe.camera,bedroom:probe.bedroom,reducedMotion:false});
-          bloom.setAvailable(true);bloom.start();bloom.update(0);bloom.update(1200);
+          bloom.setAvailable(true);bloom.start();bloom.update(0);bloom.update(300);
           const before=document.querySelector('#card-panel').hidden;
           bloom.setAvailable(false);bloom.update(20000);bloom.setAvailable(true);bloom.update(21000);
           const paused=document.querySelector('#card-panel').hidden;
@@ -69,6 +69,27 @@ class BloomChecks(BrowserCase):
         }""")
         self.assertTrue(result['before']);self.assertTrue(result['paused']);self.assertTrue(result['ready'])
         self.assertEqual(result['count'],1);self.assertEqual(result['left'],0);self.assertEqual(self.errors,[])
+
+    def test_growth_tracks_water_progress_and_freezes_between_actions(self):
+        result=self.page.evaluate("""async()=>{
+          probe.view.dispose();const {createBloomInteraction}=await import('/src/experience/bloom-interaction.ts');
+          const bloom=createBloomInteraction({canvas:probe.canvas,camera:probe.camera,bedroom:probe.bedroom,reducedMotion:false});
+          bloom.setAvailable(true);bloom.setWateringProgress(.2);bloom.update(0);
+          const bouquet=probe.rig.room.getObjectByName('bloom-bouquet');
+          const stem=bouquet.getObjectByName('bloom-tulip-0').children[0];
+          const first=stem.scale.y;bloom.update(4000);const paused=stem.scale.y;
+          bloom.setWateringProgress(.55);bloom.update(4100);const next=stem.scale.y;
+          const cardBefore=bouquet.getObjectByName('bloom-card').visible;
+          bloom.setReducedMotion(true);bloom.update(5000);const afterMotion=stem.scale.y;
+          bloom.setWateringProgress(.1);bloom.update(5100);const noBackwards=stem.scale.y;
+          bloom.setWateringProgress(1);bloom.start();bloom.update(5200);
+          const ready=!document.querySelector('#card-panel').hidden;
+          bloom.dispose();return{first,paused,next,cardBefore,afterMotion,noBackwards,ready};
+        }""")
+        self.assertGreater(result['first'],.001);self.assertLess(result['first'],1)
+        self.assertEqual(result['paused'],result['first']);self.assertGreater(result['next'],result['first'])
+        self.assertFalse(result['cardBefore']);self.assertEqual(result['afterMotion'],result['next'])
+        self.assertEqual(result['noBackwards'],result['next']);self.assertTrue(result['ready'])
 
 
 class BloomExperienceChecks(BrowserCase):
@@ -81,6 +102,24 @@ class BloomExperienceChecks(BrowserCase):
     def finish(self):
         self.page.get_by_role('button',name='Tưới cây',exact=True).click()
         expect(self.page.get_by_role('button',name='Mở thiệp',exact=True)).to_be_visible(timeout=14000)
+
+    def test_real_scene_grows_during_watering_and_freezes_on_pause(self):
+        self.ready()
+        crop={'x':575,'y':310,'width':150,'height':150}
+        before=self.page.screenshot(clip=crop)
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.wait_for_function("document.querySelector('#watering-progress').value >= 1.2")
+        self.page.get_by_role('button',name='Tạm dừng',exact=True).click()
+        paused=self.page.screenshot(clip=crop);self.assertNotEqual(before,paused)
+        value=self.page.locator('#watering-progress').evaluate('(e)=>e.value')
+        self.page.wait_for_timeout(450)
+        self.assertEqual(paused,self.page.screenshot(clip=crop))
+        self.assertEqual(value,self.page.locator('#watering-progress').evaluate('(e)=>e.value'))
+        expect(self.page.get_by_role('button',name='Mở thiệp')).not_to_be_visible()
+        self.page.emulate_media(reduced_motion='no-preference')
+        self.page.emulate_media(reduced_motion='reduce')
+        expect(self.page.get_by_role('button',name='Mở thiệp')).not_to_be_visible()
+        self.finish();self.assertEqual(self.errors,[])
 
     def test_reduced_keyboard_dialog_focus_and_resize(self):
         self.ready();expect(self.page.get_by_role('button',name='Mở thiệp')).not_to_be_visible()
@@ -106,7 +145,7 @@ class BloomExperienceChecks(BrowserCase):
     def test_normal_bloom_motion_change_does_not_replay(self):
         self.ready(False);self.page.get_by_role('button',name='Tưới cây',exact=True).click()
         expect(self.page.locator('#watering-panel')).not_to_be_visible(timeout=8000)
-        expect(self.page.get_by_role('button',name='Mở thiệp')).not_to_be_visible()
+        # Flowers now grow during watering; only the short card reveal follows it.
         self.page.set_viewport_size({'width':390,'height':844});self.page.emulate_media(reduced_motion='reduce')
         expect(self.page.get_by_role('button',name='Mở thiệp')).to_be_visible(timeout=3000)
         self.page.emulate_media(reduced_motion='no-preference')

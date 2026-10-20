@@ -11,10 +11,11 @@ export const giftMessage = {
     'Một khu vườn nhỏ, gửi cùng những lời chúc tốt lành dành cho bạn.',
   ],
   cardCaption: 'dành cho bạn',
+  coverTitle: 'Một chút dịu dàng',
 };
 
 export const bloomCopy = {
-  blooming: 'Những bông hoa đang thức dậy…',
+  blooming: 'Hoa đã nở. Một tấm thiệp nhỏ dành cho bạn…',
   ready: 'Một tấm thiệp nhỏ dành cho bạn.',
   hint: 'Chạm vào tấm thiệp giữa những bông hoa.',
   open: 'Mở thiệp', close: 'Đóng thiệp',

@@ -24,17 +24,21 @@ export function createWateringView(rig: BedroomWateringRig,
   const start = new THREE.Vector3(), soil = new THREE.Vector3(), direction = new THREE.Vector3();
   const impact = new THREE.Vector3(), delta = new THREE.Vector3(), point = new THREE.Vector3();
   const rotatedOutlet = new THREE.Vector3();
+  const roseU = new THREE.Vector3(), roseV = new THREE.Vector3();
+  const jetStarts = Array.from({ length: 9 }, () => new THREE.Vector3());
+  const jetEnds = Array.from({ length: 9 }, () => new THREE.Vector3());
   const unitY = new THREE.Vector3(0, 1, 0);
   const plane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.8);
   let reducedMotion = options.reducedMotion, disposed = false, snapping = false;
   let tween: gsap.core.Tween | null = null;
   const clock = { blend: 0 };
   const effects = new THREE.Group(); effects.name = 'watering-effects'; effects.visible = false;
-  const water = new THREE.MeshStandardMaterial({ color: 0xccebf0, roughness: 0.25,
-    transparent: true, opacity: 0.72, metalness: 0.05 });
-  const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.004, 0.007, 1, 7), water);
+  const water = new THREE.MeshStandardMaterial({ color: 0xccebf0, roughness: 0.18,
+    transparent: true, opacity: 0.64, metalness: 0.02, depthWrite: false });
+  const stream = new THREE.InstancedMesh(new THREE.CylinderGeometry(0.0013, 0.0023, 1, 6), water, 9);
+  stream.instanceMatrix.setUsage(THREE.DynamicDrawUsage); stream.frustumCulled = false;
   stream.name = 'watering-stream'; effects.add(stream);
-  const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.007, 6, 4), water, 16);
+  const drops = new THREE.InstancedMesh(new THREE.SphereGeometry(0.007, 6, 4), water, 24);
   drops.name = 'watering-drops'; drops.instanceMatrix.setUsage(THREE.DynamicDrawUsage);
   drops.frustumCulled = false; effects.add(drops); room.add(effects);
   const instance = new THREE.Object3D();
@@ -67,7 +71,7 @@ export function createWateringView(rig: BedroomWateringRig,
     direction.copy(rig.outletDirection).applyQuaternion(goalQ).normalize();
     point.copy(soil); point.x += 0.065; point.z += 0.045;
     point.addScaledVector(direction, -0.24 / -direction.y);
-    rotatedOutlet.copy(rig.outlet.position).applyQuaternion(goalQ);
+    rotatedOutlet.copy(rig.outlet.position).multiply(can.scale).applyQuaternion(goalQ);
     point.sub(rotatedOutlet);
     // The room is currently world-aligned; convert the destination through the actual parent.
     can.parent!.worldToLocal(point);
@@ -82,7 +86,8 @@ export function createWateringView(rig: BedroomWateringRig,
     if (height < 0.06 || height > 0.85 || direction.y > -0.25) return false;
     const distance = -height / direction.y;
     impact.copy(start).addScaledVector(direction, distance);
-    return Math.hypot(impact.x - soil.x, impact.z - soil.z) <= rig.soilRadius;
+    // Reserve room for the full .04-radius shower footprint, not just its center.
+    return Math.hypot(impact.x - soil.x, impact.z - soil.z) <= Math.max(0, rig.soilRadius - .04);
   };
   return {
     aimAutomatically, isValidAim, cancel,
@@ -113,18 +118,27 @@ export function createWateringView(rig: BedroomWateringRig,
       target.position.copy(soil); target.position.y += 0.025;
       wet.material.opacity = THREE.MathUtils.clamp(progress, 0, 1) * 0.28;
       if (!effects.visible) return;
-      delta.subVectors(impact, start);
-      stream.position.copy(start).addScaledVector(delta, 0.5);
-      stream.scale.set(1, delta.length(), 1);
-      stream.quaternion.setFromUnitVectors(unitY, delta.normalize());
+      roseU.crossVectors(direction, unitY).normalize(); roseV.crossVectors(direction, roseU).normalize();
+      for (let i = 0; i < 9; i++) {
+        const angle = (i - 1) * Math.PI / 4, ring = i === 0 ? 0 : 1;
+        jetStarts[i].copy(start).addScaledVector(roseU, Math.cos(angle) * .011 * ring)
+          .addScaledVector(roseV, Math.sin(angle) * .011 * ring);
+        jetEnds[i].copy(impact); jetEnds[i].x += Math.cos(angle) * .04 * ring;
+        jetEnds[i].z += Math.sin(angle) * .04 * ring;
+        delta.subVectors(jetStarts[i], jetEnds[i]);
+        instance.position.copy(jetStarts[i]).add(jetEnds[i]).multiplyScalar(.5);
+        instance.scale.set(1, delta.length(), 1);
+        instance.quaternion.setFromUnitVectors(unitY, delta.normalize()); instance.updateMatrix();
+        stream.setMatrixAt(i, instance.matrix);
+      }
+      stream.instanceMatrix.needsUpdate = true;
       drops.visible = !reducedMotion;
       if (!reducedMotion) {
-        for (let i = 0; i < 16; i++) {
-          const t = (now * 0.0018 + i / 16) % 1;
-          instance.position.lerpVectors(start, impact, t);
-          instance.position.x += Math.sin(i * 2.4) * 0.012 * t;
-          instance.position.z += Math.cos(i * 2.4) * 0.012 * t;
-          instance.scale.set(0.55, 1.35, 0.55); instance.updateMatrix(); drops.setMatrixAt(i, instance.matrix);
+        instance.quaternion.identity();
+        for (let i = 0; i < 24; i++) {
+          const t = (now * 0.0018 + i / 24) % 1;
+          instance.position.lerpVectors(jetStarts[i % 9], jetEnds[i % 9], t);
+          instance.scale.set(0.5, 1.35, 0.5); instance.updateMatrix(); drops.setMatrixAt(i, instance.matrix);
         }
         drops.instanceMatrix.needsUpdate = true;
         plant.rotation.z += Math.sin(now * 0.004) * 0.012;
@@ -136,7 +150,7 @@ export function createWateringView(rig: BedroomWateringRig,
       if (disposed) return;
       cancel(true); disposed = true; stopTween();
       room.remove(effects, wet, target);
-      stream.geometry.dispose(); drops.geometry.dispose(); drops.dispose(); water.dispose();
+      stream.geometry.dispose(); stream.dispose(); drops.geometry.dispose(); drops.dispose(); water.dispose();
       wet.geometry.dispose(); wet.material.dispose(); target.geometry.dispose(); target.material.dispose();
     },
   };

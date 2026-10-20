@@ -111,6 +111,7 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
   const render = (now: number) => {
     if (disposed) return;
     watering?.update(now);
+    bloom?.setWateringProgress(watering?.progress ?? 0);
     if (bloomRequested) {
       bloomRequested = false; bloomStarted = true; watering?.setAvailable(false);
       if (bloom) bloom.start(); else controls.setStatus(bloomCopy.unavailable);

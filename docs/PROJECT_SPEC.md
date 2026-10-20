@@ -341,6 +341,23 @@ The complete gift should start directly in the browser with no setup screen, acc
 
 ## Milestone 3 watering-time decision
 
+### User amendment — simultaneous growth and presentation refinement
+
+On 2026-10-20, after accepting M4 implementation, the user explicitly requested:
+grow the plant during valid watering, pause growth when watering stops, redesign
+the simple card, and make the can smaller with multiple water jets. This amendment
+supersedes the earlier sequential watering-then-growth timing above. The same
+five seconds of accumulated valid watering now drive stems, buds and opening
+petals directly; flowers finish at five seconds, then the card is presented.
+Reduced motion preserves this water-driven growth amount and only skips the
+post-completion card movement. The greeting dialog and 3D paper card gain a
+folded botanical design. The runtime can is reduced to 82% of its previous size;
+nine thin jets spread from the rose, with the entire footprint inside the soil.
+Keep all existing input, focus, pause/resume, retry and teardown guarantees.
+This is local implementation authorization, not permission to publish or deploy.
+
+### Original timing decision (still applies)
+
 Resolved by the user on 2026-10-20: **preserve accumulated valid watering time when input stops or the can moves away from the pot**. Resume from that amount until five valid seconds have accumulated; do not reset progress on a pause. Reloading the page starts a fresh experience.
 
 The user approved the proposed M3 flow, detailed [watering design](superpowers/specs/2026-10-20-watering-interaction-design.md) and [implementation plan](superpowers/plans/2026-10-20-watering-interaction.md), selecting sequential root execution on 2026-10-20.
