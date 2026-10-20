@@ -8,7 +8,7 @@ Build a warm, personal 20/10 gift as a browser-based Three.js storybook diorama.
 
 ## Current scope
 
-Implement one milestone at a time. The user accepted the M1 exterior and refined M2 bedroom, then approved the written [M3 watering design](docs/superpowers/specs/2026-10-20-watering-interaction-design.md) and [implementation plan](docs/superpowers/plans/2026-10-20-watering-interaction.md) on 2026-10-20. Sequential root implementation is authorized: drag or activate the can, accumulate five valid seconds while preserving progress on pause, and emit one completion/bloom-start handoff. Preserve the accepted M2 room and its loading/recovery behavior. The authored tulip/card sequence belongs to the later M4 scope. Follow the personal policy's two independent final read-only reviews.
+Implement one milestone at a time. M1 exterior, refined M2 bedroom and M3 watering have been delivered. On 2026-10-20 the user requested immediate M4 implementation under the existing PROJECT_SPEC: staged tulip growth and opening petals, followed by an actionable paper card and accessible Vietnamese greeting dialog. See the [M4 execution note](docs/superpowers/plans/2026-10-20-bloom-card.md). Preserve the accepted room, five-second watering behavior and loading/recovery paths. Greeting content belongs in `src/content/gift-message.ts`; until supplied, use a documented neutral default without invented identities or memories. Follow the personal policy's two independent final read-only reviews. Local implementation does not authorize deployment, merge or push.
 
 ## Technical rules
 

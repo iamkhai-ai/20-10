@@ -11,6 +11,8 @@ import { createCameraStory, type CameraStoryHandle, type StoryPhase } from './ex
 import { createIntroControls, storyCopy } from './ui/intro-controls';
 import { createWateringInteraction, type WateringInteraction } from './experience/watering-interaction';
 import { wateringCopy } from './ui/watering-controls';
+import { createBloomInteraction, type BloomInteraction } from './experience/bloom-interaction';
+import { bloomCopy } from './content/gift-message';
 
 const host = document.querySelector<HTMLElement>('#scene-root');
 const status = document.querySelector<HTMLElement>('#status');
@@ -39,6 +41,8 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
   runtime.scene.add(exterior.group);
   let room: BedroomBuildResult | null = null;
   let watering: WateringInteraction | null = null;
+  let bloom: BloomInteraction | null = null;
+  let bloomRequested = false, bloomStarted = false;
   let wateringFailed = false;
   let currentPhase: StoryPhase | null = null;
   let roomState: 'pending' | 'ready' | 'unavailable' = 'pending';
@@ -67,7 +71,8 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
     currentPhase = next;
     controls.setSettled(next === 'desk-settled' || (next === 'bedroom-unavailable' && !waitingRetry));
     controls.setRetryVisible(next === 'bedroom-unavailable' && roomState === 'unavailable' && !attempt);
-    watering?.setAvailable(next === 'desk-settled' && location === 'bedroom');
+    watering?.setAvailable(next === 'desk-settled' && location === 'bedroom' && !bloomStarted);
+    bloom?.setAvailable(next === 'desk-settled' && location === 'bedroom');
   };
   const updateSway = () => {
     for (const tween of swayTweens) tween.kill();
@@ -86,6 +91,7 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
   const activate = (next: 'exterior' | 'bedroom') => {
     if (next === 'bedroom' && !room) throw new Error('Bedroom is not ready.');
     watering?.setAvailable(false);
+    bloom?.setAvailable(false);
     location = next;
     exterior.group.visible = next === 'exterior';
     if (room) room.group.visible = next === 'bedroom';
@@ -97,7 +103,7 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
     else if (roomState === 'unavailable') story?.setBedroomUnavailable();
   };
   const onResize = () => { watering?.pause(); runtime.resize(); story?.reframe(); };
-  const onMotion = () => { watering?.setReducedMotion(motion.matches); story?.setReducedMotion(motion.matches); updateSway(); };
+  const onMotion = () => { watering?.setReducedMotion(motion.matches); bloom?.setReducedMotion(motion.matches); story?.setReducedMotion(motion.matches); updateSway(); };
   const observer = new ResizeObserver(onResize);
   observer.observe(host);
   window.addEventListener('resize', onResize);
@@ -105,6 +111,11 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
   const render = (now: number) => {
     if (disposed) return;
     watering?.update(now);
+    if (bloomRequested) {
+      bloomRequested = false; bloomStarted = true; watering?.setAvailable(false);
+      if (bloom) bloom.start(); else controls.setStatus(bloomCopy.unavailable);
+    }
+    bloom?.update(now);
     runtime.renderer.render(runtime.scene, runtime.camera);
     frameId = window.requestAnimationFrame(render);
   };
@@ -126,6 +137,7 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
     observer.disconnect();
     for (const tween of swayTweens) tween.kill();
     restRotations.clear();
+    bloom?.dispose(); bloom = null;
     watering?.dispose(); watering = null;
     story?.dispose();
     controls.dispose();
@@ -135,6 +147,7 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
 
   async function loadRoom(): Promise<void> {
     if (disposed || attempt) return;
+    bloom?.dispose(); bloom = null; bloomRequested = false; bloomStarted = false;
     watering?.dispose(); watering = null; wateringFailed = false;
     if (room) {
       for (const target of room.swayTargets) restRotations.delete(target);
@@ -160,11 +173,16 @@ function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
       roomState = 'ready';
       try {
         watering = createWateringInteraction({ canvas: runtime.renderer.domElement,
-          camera: runtime.camera, bedroom: built, reducedMotion: motion.matches });
+          camera: runtime.camera, bedroom: built, reducedMotion: motion.matches,
+          onComplete: () => { bloomRequested = true; } });
       } catch (error) {
         wateringFailed = true;
         console.warn('Watering is unavailable; keeping the bedroom.', error);
       }
+      try {
+        bloom = createBloomInteraction({ canvas: runtime.renderer.domElement,
+          camera: runtime.camera, bedroom: built, reducedMotion: motion.matches });
+      } catch (error) { console.warn('Card presentation is unavailable; keeping the bedroom.', error); }
     } catch (error) {
       if (parsed) disposeObjectResources([parsed.group], [runtime.scene]);
       if (disposed || serial !== current.id) return;

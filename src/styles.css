@@ -80,6 +80,17 @@ body {
 }
 
 #watering-panel[hidden] { display: none; }
+#card-panel { display: grid; gap: 12px; padding: 17px; border: 1px solid #cdbfa8; border-radius: 15px; background: rgba(250,246,235,.94); pointer-events: auto; }
+#card-panel[hidden] { display: none; }
+#card-panel p { margin: 0; font-size: .88rem; line-height: 1.5; }
+#gift-dialog { width: min(560px,calc(100vw - 32px)); max-height: calc(100dvh - 32px); padding: 0; border: 1px solid #c7ae86; border-radius: 6px; background: #fcf4e5; color: #34463a; overflow: auto; box-shadow: 0 24px 100px #182b3266; }
+#gift-dialog::backdrop { background: rgba(36,48,42,.48); backdrop-filter: blur(5px); }
+.gift-paper { margin: 12px; padding: clamp(22px,5vw,40px); border: 1px solid #dbc5a4; background-image: repeating-linear-gradient(0deg,transparent 0 3px,#bfa67c05 4px 5px); }
+.gift-date { margin: 0 0 18px; color: #9c6171; font-family: Georgia,serif; font-size: .95rem; letter-spacing: .3em; }
+.gift-paper h2 { margin: 0 0 28px; font-family: Georgia,"Times New Roman",serif; font-size: clamp(1.65rem,5vw,2.3rem); line-height: 1.12; font-weight: 500; letter-spacing: -.035em; }
+.gift-salutation { font-family: Georgia,serif; font-style: italic; font-size: 1.2rem; }
+.gift-letter { margin-bottom: 26px; font-size: .98rem; line-height: 1.85; }
+.gift-letter p { margin: 0 0 14px; }
 #watering-hint { margin: 0; font-size: 0.86rem; line-height: 1.45; }
 .watering-progress-row { display: flex; justify-content: space-between; gap: 12px; font-size: 0.78rem; }
 #watering-amount { font-variant-numeric: tabular-nums; }
@@ -136,7 +147,7 @@ button:focus-visible {
 }
 
 @media (max-width: 520px) {
-  #watering-panel {
+  #watering-panel, #card-panel {
     position: fixed;
     left: calc(16px + var(--safe-left));
     right: calc(16px + var(--safe-right));

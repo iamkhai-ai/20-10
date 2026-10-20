@@ -102,7 +102,8 @@ class WateringExperienceChecks(BrowserCase):
         expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible(timeout=20000)
 
     def amount(self):
-        return self.page.get_by_role('progressbar').evaluate('(e)=>e.value')
+        # Completion hands the visible panel to M4, retaining the terminal value.
+        return self.page.locator('#watering-progress').evaluate('(e)=>e.value')
 
     def point(self, point):
         w=self.page.viewport_size['width'];h=self.page.viewport_size['height'];a=w/h
@@ -133,7 +134,8 @@ class WateringExperienceChecks(BrowserCase):
         saved=self.amount();self.assertGreater(saved,.8);self.assertLess(saved,3)
         self.page.wait_for_timeout(400);self.assertEqual(saved,self.amount())
         self.page.get_by_role('button',name='Tưới cây',exact=True).press('Enter')
-        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.',timeout=7000)
+        # M4 now consumes completion and replaces the M3 terminal status/panel.
+        expect(self.page.locator('#watering-progress')).to_have_js_property('value',5,timeout=7000)
         self.assertEqual(self.amount(),5);self.assertEqual(self.page.evaluate('document.activeElement.id'),'status')
         self.assertEqual(self.errors,[])
 
@@ -146,7 +148,7 @@ class WateringExperienceChecks(BrowserCase):
         self.assertGreater(self.amount(),.1)
         touch('touchCancel');saved=self.amount();self.page.wait_for_timeout(180);self.assertEqual(saved,self.amount())
         touch('touchStart',can);touch('touchMove',soil)
-        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.',timeout=7000)
+        expect(self.page.locator('#watering-progress')).to_have_js_property('value',5,timeout=7000)
         touch('touchEnd');self.assertEqual(self.amount(),5);self.assertEqual(self.errors,[])
 
     def test_resize_motion_visibility_and_teardown(self):
