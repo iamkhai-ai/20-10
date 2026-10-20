@@ -1,4 +1,111 @@
-# Milestone 2 visual refinement — current local handoff
+# Milestone 3 watering — current local handoff
+
+The user approved the M3 design, written spec and concrete implementation plan,
+choosing sequential execution in this chat. The implementation is local on
+`codex/watering-feature`. Reviewed and verified runtime source:
+`cee05c47041c923cc29272886329ea67c9750fac`.
+The later handoff documentation commit preserves that source and its assets.
+No M3 push, merge, deployment or M4 implementation is included.
+
+## Delivered behavior
+
+- After the bedroom reaches the settled desk, drag the pastel-blue can toward
+  the planter or activate the native **Tưới cây** button. Mouse, touch,
+  Enter/Space and assistive-technology clicks use the same progress owner.
+- Only a downward nozzle aimed into the soil emits water and accumulates time.
+  Five valid seconds complete once. Pauses and invalid aim preserve the total;
+  alignment, return and inactive intervals add no credit.
+- Release, cancellation, capture loss, focus loss, hidden page, Escape, resize,
+  live motion-preference changes and teardown stop the action safely.
+- A thin stream, 16 instanced drops, local soil wetness and restrained plant
+  feedback accompany watering. Reduced motion uses immediate can poses and a
+  stable stream without animated drops or oscillation.
+- A labeled native progress indicator, visible amount, pause/resume action and
+  coarse status announcements provide a complete alternative to dragging.
+  Completion returns the can and says **Cây đã đủ nước rồi.**
+- The accepted room GLB, exterior, camera composition and M2 loading/retry/
+  fallback behavior are preserved. No runtime dependency was added.
+
+## M3 revision-bound evidence — 2026-10-20
+
+All runtime checks below apply to `cee05c4`, with unchanged packed assets.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Strict TypeScript | PASS | `npm run typecheck`, exit 0 |
+| Production build | PASS | `npm run build`, exit 0; `index-D_dN4-n9.js`, 766.81 kB / 209.04 kB gzip |
+| Dev watering suite | PASS | 23 tests, 117.857 s |
+| Dev bedroom regressions | PASS | 17 tests, 166.577 s |
+| Compiled watering experience | PASS | 5 tests, 45.548 s |
+| Compiled bedroom experience | PASS | 7 tests, 135.048 s |
+| Packed bedroom validation | PASS | 4,871,584 bytes; 45,449 triangles; 37 primitives; 24 materials; 26 images |
+| Actual desktop/portrait graphics | PASS | 1440x900 and 390x844; ready, held, pour, stop, return and complete; normal and reduced motion |
+| Unexpected JavaScript errors / external requests | PASS | None in actual final capture routes |
+| Warning-free desktop console | FAIL | Existing driver shader precision warning X4122 persists |
+| Physical-phone FPS / full-video temporal review | NOT_RUN | Browser captures and submission samples do not establish these |
+
+The tests cover state timing, valid/invalid aim, pointer ownership/cancellation,
+real touch input, native keyboard controls, focus/visibility, resize/motion,
+loading/retry, teardown and the existing bedroom story/fallback behavior.
+Test-only harnesses do not expose a production debug global.
+
+Sampled reduced-motion render submissions: desktop 71 calls / 90,504 triangles
+at rest and 72 / 90,532 while pouring; portrait 64 / 74,676 and 65 / 74,704.
+These are renderer submissions including existing scene passes, not asset
+triangle counts or frame-rate measurements. Normal motion additionally uses
+one bounded instanced droplet mesh. Vite's chunk-size warning remains.
+
+Two independent read-only reviews of the same frozen revision completed with
+**no actionable findings**: `/root/m3_review_a` and `/root/m3_review_b`.
+Both checked the full source diff against the approved requirements and supplied
+captures. Review A inspected a subset of the captures. Neither reran tests/build.
+Requested settings were `gpt-6-luna` / `high`; resolved settings were not exposed
+and remain unknown. Read-only was instructed, not technically enforced. Both
+reviewers share a model family, so correlated blind spots remain possible.
+The root ran the verification commands separately. User visual acceptance of
+M3 remains separate from these technical results.
+
+GLB SHA-256 remains
+`d3050738274f5062507f7869ce90f8d4c5cfef1969d9bd5ea001f9d4770f0268`.
+Exterior SHA-256 remains
+`e548f10b90dab7cad02b5918e631438946d5d7e0812a7983d91e9662d78b4279`.
+Existing caps remain 6,000,000 bytes / 60,000 triangles / 50 primitives.
+
+Logs, final captures, raw measurements, review messages and the execution ledger
+are saved in this Codex task's `outputs` directory with an `m3-` prefix.
+The implementation was isolated in `.worktrees/watering-feature` using Git after
+the app-native worktree tools returned `Transport closed`; no app-managed
+worktree attachment is claimed. The final task report names the active checkout
+and live preview. Preserve `.vercel` and deployment configuration.
+
+## Continuing with M4
+
+`createWateringInteraction` accepts an optional `onComplete` callback. It fires
+once when valid watering reaches five seconds, after input and water stop.
+M3 already handles completion status and can return without a consumer. Connect
+the authored tulip growth/petal sequence and later card in the approved M4 scope;
+no placeholder flower/card invitation or personal message exists in M3.
+
+Reproduce checks with the existing installed tooling:
+
+```powershell
+npm run typecheck
+npm run build
+# Run dev and preview in separate terminals, using their actual reported ports.
+npm run dev -- --host 127.0.0.1 --port 5180
+$env:GARDEN_TEST_URL='http://127.0.0.1:5180'
+python tests/watering_browser.py
+python tests/bedroom_browser.py
+npm run preview -- --host 127.0.0.1 --port 4176
+$env:GARDEN_TEST_URL='http://127.0.0.1:4176'
+python tests/watering_browser.py WateringExperienceChecks
+python tests/bedroom_browser.py ExperienceChecks
+python tests/validate_bedroom_glb.py
+```
+
+---
+
+# Historical Milestone 2 visual refinement handoff
 
 The user requested a more detailed, near-real warm bedroom, then refined
 planter, wall, floor, quilt and watering-can appearance during review.
