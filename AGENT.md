@@ -8,7 +8,7 @@ Build a warm, personal 20/10 gift as a browser-based Three.js storybook diorama.
 
 ## Current scope
 
-Implement one milestone at a time. The user accepted the Milestone 1 exterior and approved the Milestone 2 bedroom design and implementation plan on 2026-10-20. Read [`docs/superpowers/specs/2026-10-20-bedroom-reveal-design.md`](docs/superpowers/specs/2026-10-20-bedroom-reveal-design.md) for the current scope: Blender-authored bedroom, concealed window-to-room transition, and camera settling at the desk plant. Sequential root implementation is authorized. Watering input, bloom, and card behavior require later approved scopes.
+Implement one milestone at a time. The user accepted the M1 exterior and refined M2 bedroom, then approved the written [M3 watering design](docs/superpowers/specs/2026-10-20-watering-interaction-design.md) and [implementation plan](docs/superpowers/plans/2026-10-20-watering-interaction.md) on 2026-10-20. Sequential root implementation is authorized: drag or activate the can, accumulate five valid seconds while preserving progress on pause, and emit one completion/bloom-start handoff. Preserve the accepted M2 room and its loading/recovery behavior. The authored tulip/card sequence belongs to the later M4 scope. Follow the personal policy's two independent final read-only reviews.
 
 ## Technical rules
 

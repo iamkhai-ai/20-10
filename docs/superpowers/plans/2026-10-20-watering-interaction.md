@@ -223,10 +223,10 @@ Keep logs/captures in this Codex task's `outputs` directory with an M3 prefix. T
 
 ## Execution handoff
 
-**Status:** Plan complete, awaiting user review and execution-method selection. The user approved the detailed spec; product-code implementation has not started.
+**Status:** Approved by the user on 2026-10-20 with “Duyệt, bạn triển khai tuần tự trong chat này (đề xuất)”. Sequential root execution is authorized, followed by two independent final reviews.
 
 **Recommended:** sequential root execution in this chat through `superpowers:executing-plans`, followed by the two independent final read-only reviews. Can-pose calibration, input ownership and actual framing share state, so keeping implementation together reduces handoff overhead.
 
 **Alternative:** sequential subagent-driven execution, with a fresh allowed-model implementer and task reviewer per slice, followed by the two final independent reviews. This adds contexts and handoffs; it still requires the personal policy's `gpt-6-luna` with `high`/`xhigh`, and availability failure remains a blocker.
 
-User approval of this concrete plan and execution method is the next gate. After approval, execute all tasks without task-by-task confirmation. Later M4 work, remote push, merge and deployment remain separately scoped.
+The user approved this concrete plan and selected sequential root execution. Execute all tasks without task-by-task confirmation. Later M4 work, remote push, merge and deployment remain separately scoped.

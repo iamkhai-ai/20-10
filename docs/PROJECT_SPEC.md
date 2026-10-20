@@ -343,4 +343,4 @@ The complete gift should start directly in the browser with no setup screen, acc
 
 Resolved by the user on 2026-10-20: **preserve accumulated valid watering time when input stops or the can moves away from the pot**. Resume from that amount until five valid seconds have accumulated; do not reset progress on a pause. Reloading the page starts a fresh experience.
 
-The user approved both the proposed M3 interaction flow and the detailed [watering design](superpowers/specs/2026-10-20-watering-interaction-design.md). The [implementation plan](superpowers/plans/2026-10-20-watering-interaction.md) is ready for user review and execution-method selection before product-code changes.
+The user approved the proposed M3 flow, detailed [watering design](superpowers/specs/2026-10-20-watering-interaction-design.md) and [implementation plan](superpowers/plans/2026-10-20-watering-interaction.md), selecting sequential root execution on 2026-10-20.
