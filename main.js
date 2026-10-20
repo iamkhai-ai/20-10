@@ -1,4 +1,9 @@
 import * as THREE from 'three';
+import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
+import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
+import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
+import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
+import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const loading = document.getElementById('loading');
 const hint = document.getElementById('hint');
@@ -10,7 +15,13 @@ const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(window.innerWidth, window.innerHeight);
 renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
 renderer.shadowMap.enabled = true;
+renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.toneMapping = THREE.ACESFilmicToneMapping;
+renderer.toneMappingExposure = 1.05;
 document.body.appendChild(renderer.domElement);
+
+const pmremGenerator = new THREE.PMREMGenerator(renderer);
+scene.environment = pmremGenerator.fromScene(new RoomEnvironment(), 0.04).texture;
 
 const scene = new THREE.Scene();
 scene.background = new THREE.Color(0x1a1024);
@@ -28,6 +39,15 @@ scene.add(sun);
 const point = new THREE.PointLight(0xffb6c1, 0.8, 12);
 point.position.set(0, 2, 2);
 scene.add(point);
+const hemi = new THREE.HemisphereLight(0xffe4ec, 0x4a3a5a, 0.5);
+scene.add(hemi);
+sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.camera.near = 0.5;
+sun.shadow.camera.far = 40;
+sun.shadow.camera.left = -12;
+sun.shadow.camera.right = 12;
+sun.shadow.camera.top = 12;
+sun.shadow.camera.bottom = -12;
 
 const matWall = new THREE.MeshStandardMaterial({ color: 0xf5e6d3, roughness: 0.9 });
 const matRoof = new THREE.MeshStandardMaterial({ color: 0x8b3a3a, roughness: 0.8 });
@@ -358,6 +378,11 @@ renderer.domElement.addEventListener('touchend', (e) => { e.preventDefault(); on
 closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
 
 const clock = new THREE.Clock();
+const composer = new EffectComposer(renderer);
+composer.addPass(new RenderPass(scene, camera));
+const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.4, 0.85);
+composer.addPass(bloomPass);
+composer.addPass(new OutputPass());
 
 function animate() {
   requestAnimationFrame(animate);
@@ -429,7 +454,7 @@ function animate() {
     }
   }
 
-  renderer.render(scene, camera);
+  composer.render();
 }
 animate();
 
@@ -437,6 +462,7 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
+  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 loading.style.display = 'none';
