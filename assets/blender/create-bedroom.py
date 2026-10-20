@@ -50,7 +50,8 @@ def mat(name, color, rough=.8, grain=None, emission=0):
         yy, xx = np.mgrid[0:n, 0:n] / n
         noise = np.random.default_rng(len(name)).random((n, n)) - .5
         if grain == 'wood':
-            variation = np.sin(xx*180 + np.sin(yy*15)*1.7)*.025 + noise*.016
+            strength = .009 if name == 'Pale floor oak' else .015
+            variation = np.sin(xx*180 + np.sin(yy*15)*1.7)*strength + noise*.004
         elif grain == 'fabric':
             variation = (np.sin(xx*700) + np.sin(yy*700))*.009 + noise*.015
         else: variation = noise*.013
@@ -86,11 +87,11 @@ bookrose = mat('Book rose', (.57,.29,.29))
 bedroom = empty('bedroom')
 shell = empty('room_shell', parent=bedroom)
 desk = empty('desk', parent=bedroom)
-pot = empty('plant_pot', parent=bedroom)
-plant = empty('plant_rest', parent=bedroom)
-can = empty('watering_can', parent=bedroom)
-cleft = empty('curtain_left', parent=bedroom)
-cright = empty('curtain_right', parent=bedroom)
+pot = empty('plant_pot', (1.10,1.085,-.88), bedroom)
+plant = empty('plant_rest', (1.10,1.40,-.88), bedroom)
+can = empty('watering_can', (1.91,1.085,-.85), bedroom)
+cleft = empty('curtain_left', (.02,2.94,-1.78), bedroom)
+cright = empty('curtain_right', (2.09,2.94,-1.78), bedroom)
 
 
 def assign(o, material, parent=shell, smooth=False):

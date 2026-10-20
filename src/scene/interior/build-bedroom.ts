@@ -28,7 +28,7 @@ export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
   const portrait: BedroomPoses = {
     entry: pose([2.0, 2.7, 4.8], windowTarget),
     room: pose([3.0, 4.0, 9.0], roomTarget),
-    desk: pose([2.25, 2.6, 3.65], deskTarget),
+    desk: pose([2.15, 2.35, 2.75], deskTarget),
   };
   return { group, swayTargets: [model.nodes.curtain_left, model.nodes.curtain_right],
     cameraPoses: (aspect) => aspect < 0.85 ? portrait : landscape };

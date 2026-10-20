@@ -16,14 +16,18 @@ into the script before rebuilding. No project Python dependency is needed.
 Room-local coordinates are X-right, Y-up, Z-front, with floor Y=0 and the
 rear window wall Z=-2.1. `bedroom` is the static root. `room_shell`, `desk`,
 `plant_pot`, `plant_rest`, `watering_can`, `curtain_left`, and `curtain_right`
-are separate transform roots with geometry descendants. `window_anchor`,
+are separate transform roots with geometry descendants. The pot, plant and
+can pivots sit at their own bases; curtain pivots sit at the rod so sway
+does not rotate the entire fabric around the room origin. `window_anchor`,
 `room_target`, `desk_target`, and `pot_target` are empty leaf anchors under
 `bedroom`; none moves with the can/curtains/plant. The bedroom is shown in
 a separate scene group during the concealed handoff; no exterior offset
 is applied to it.
 
 The room export has 39,140 triangles, 29 primitives, 19 materials and
-9 embedded images (approximately 2.23 MB). Validate actual packed resource,
+9 embedded images (2,186,796 bytes). Final GLB SHA-256:
+`c8e614b801a0c41a7e11d1f7f3a275f4e62eea8876a042f1e13bb79f0776b2f6`.
+Validate actual packed resource,
 hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
 The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.
 The can is a prop at M2; watering is not implemented by the asset.
