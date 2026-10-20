@@ -1,5 +1,35 @@
 # Exterior asset source
 
+## Milestone 2 bedroom source
+
+The original bedroom is authored separately in `create-bedroom.py` and
+`bedroom.blend`. Rebuild from the repository root with the same Blender:
+
+```powershell
+& $blenderExe --background --factory-startup --python assets/blender/create-bedroom.py
+```
+
+Optional source preview: append `-- --preview C:\absolute\path\room.png`.
+The preview rig is excluded from the runtime GLB. Carry manual edits back
+into the script before rebuilding. No project Python dependency is needed.
+
+Room-local coordinates are X-right, Y-up, Z-front, with floor Y=0 and the
+rear window wall Z=-2.1. `bedroom` is the static root. `room_shell`, `desk`,
+`plant_pot`, `plant_rest`, `watering_can`, `curtain_left`, and `curtain_right`
+are separate transform roots with geometry descendants. `window_anchor`,
+`room_target`, `desk_target`, and `pot_target` are empty leaf anchors under
+`bedroom`; none moves with the can/curtains/plant. The bedroom is shown in
+a separate scene group during the concealed handoff; no exterior offset
+is applied to it.
+
+The room export has 39,140 triangles, 29 primitives, 19 materials and
+9 embedded images (approximately 2.23 MB). Validate actual packed resource,
+hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
+The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.
+The can is a prop at M2; watering is not implemented by the asset.
+
+## Milestone 1 exterior source
+
 The house, window and framing tree are original Blender-authored assets for Milestone 1. The garden, path, flowers, camera and interface remain in Three.js.
 
 ## Rebuild

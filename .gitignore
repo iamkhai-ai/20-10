@@ -2,3 +2,5 @@
 node_modules
 dist
 .worktrees/
+*.blend1
+__pycache__/
