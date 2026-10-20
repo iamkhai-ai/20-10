@@ -36,7 +36,7 @@ export function createExteriorMaterials(): ExteriorMaterials {
     interiorGlow: new THREE.MeshStandardMaterial({
       color: 0xe9b969,
       emissive: 0xe9b969,
-      emissiveIntensity: 0.75,
+      emissiveIntensity: 0.9,
       roughness: 1,
     }),
     ground: new THREE.MeshStandardMaterial({ color: 0x8fa07a, roughness: 0.95 }),
