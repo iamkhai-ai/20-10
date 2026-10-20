@@ -74,8 +74,12 @@ Use the existing commands below for rebuilding and regression checks.
 The user subsequently requested M3 and selected preservation of accumulated
 valid watering time on pause. The in-chat interaction flow is approved;
 the detailed design at
-`docs/superpowers/specs/2026-10-20-watering-interaction-design.md` awaits
-written-spec review before implementation planning. M3 code has not begun.
+`docs/superpowers/specs/2026-10-20-watering-interaction-design.md` is now
+approved for implementation planning. Plan review precedes product-code
+changes. M3 code has not begun.
+The concrete plan is
+`docs/superpowers/plans/2026-10-20-watering-interaction.md`; it awaits user
+review and execution-method selection.
 
 ---
 # Historical Milestone 2 initial handoff

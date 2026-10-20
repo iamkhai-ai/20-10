@@ -1,6 +1,6 @@
 # Milestone 3 — Watering interaction
 
-**Status:** Detailed written design awaiting user review. The in-chat flow is approved; implementation planning has not started.
+**Status:** Detailed written design approved by the user on 2026-10-20 with “Duyệt spec, viết kế hoạch triển khai”. Implementation planning is authorized.
 
 **Date:** 2026-10-20, Asia/Saigon
 
@@ -169,4 +169,4 @@ Report every result as PASS, FAIL or NOT_RUN, bound to the revision checked. The
 
 ## Next gate
 
-Review this detailed written specification. After approval, write and review the concrete implementation plan and select execution method. Root implementation can continue sequentially, followed by the two independent reviewers required by the personal policy. This document does not claim that implementation, tests, or M3 review have run.
+The user approved this detailed written specification. Write and review the concrete implementation plan and select execution method before product-code changes. Root implementation can continue sequentially, followed by the two independent reviewers required by the personal policy. This document does not claim that implementation, tests, or M3 review have run.
