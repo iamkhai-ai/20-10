@@ -14,8 +14,10 @@ the M3 branch and detached audit worktree remain intact. No remote action.
 ## Concrete scope
 
 Five modeled tulips: curved stems, shaped leaves, cup buds and separately opening
-petals in dusty rose/cream. About 4.4 seconds, staggered stems → buds → petals →
-ivory paper card. Reduced motion presents the finished arrangement immediately.
+petals in dusty rose/cream. **Historical timing, superseded by the later user
+amendment in `docs/PROJECT_SPEC.md`:** flowers grow during five accumulated valid
+watering seconds; reduced motion preserves that growth amount and skips only the
+post-completion card movement.
 Keep accepted room/camera/GLBs unchanged. No particles, post-processing or new
 dependency. Readable native card button mirrors canvas picking. A native modal
 dialog shows editable Vietnamese text, handles Escape/close and restores focus.
