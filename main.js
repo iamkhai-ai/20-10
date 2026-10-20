@@ -143,7 +143,22 @@ const flowerCenter = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), new 
 flowerCluster.add(flowerCenter);
 interior.add(plant);
 
-const card = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.22), matCard);
+const cardCanvas = document.createElement('canvas');
+cardCanvas.width = 512;
+cardCanvas.height = 320;
+const cardCtx = cardCanvas.getContext('2d');
+cardCtx.fillStyle = '#fff7e6';
+cardCtx.fillRect(0, 0, 512, 320);
+cardCtx.fillStyle = '#c44569';
+cardCtx.font = 'bold 48px sans-serif';
+cardCtx.textAlign = 'center';
+cardCtx.fillText('💌 Thiệp 20/10', 256, 130);
+cardCtx.font = '24px sans-serif';
+cardCtx.fillStyle = '#5c3a21';
+cardCtx.fillText('Bấm để mở', 256, 200);
+const cardTex = new THREE.CanvasTexture(cardCanvas);
+const cardMatTex = new THREE.MeshBasicMaterial({ map: cardTex, side: THREE.DoubleSide });
+const card = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.22), cardMatTex);
 card.position.set(0, 1.85, -0.2);
 card.visible = false;
 interior.add(card);
