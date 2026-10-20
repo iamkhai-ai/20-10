@@ -1,4 +1,119 @@
-# Exterior handoff
+# Milestone 2 handoff
+
+## Current delivered scope
+
+The user approved the M2 design and implementation plan on 2026-10-20.
+The local `codex/bedroom-reveal` branch now continues the accepted exterior
+through a concealed linen-covered transition into a Blender-authored
+bedroom. It reveals the bed, rug, shelf, lamp and desk, then settles on
+the potted seedling and sage watering can. The can is a prop; watering,
+bloom and greeting-card behavior are later milestones.
+
+**Verified/reviewed source revision:** `9fbb98d2ccc46536e2192ec4e20f728c54401c5f`.
+The final handoff commit changes documentation only, preserving that
+source/asset revision and its evidence. M1 baseline: `93244d0`.
+
+Read `AGENT.md`, the approved M2 design at
+`docs/superpowers/specs/2026-10-20-bedroom-reveal-design.md`, and its plan
+at `docs/superpowers/plans/2026-10-20-bedroom-reveal.md`.
+
+## Run, edit and check M2
+
+```powershell
+npm ci
+npm run dev -- --host 127.0.0.1
+npm run typecheck
+npm run build
+npm run preview -- --host 127.0.0.1
+```
+
+Use the port Vite actually reports. The task's production preview used
+`http://127.0.0.1:4176/`; dev verification used port 5175.
+
+- Room asset source/export: `assets/blender/create-bedroom.py`,
+  `assets/blender/bedroom.blend`, and `public/models/bedroom.glb`.
+- Blender version, node names, pivots and rebuild command:
+  `assets/blender/README.md`.
+- Packed fetch/parse cancellation: `src/scene/assets/load-packed-glb.ts`.
+- Room validation and assembly: `load-bedroom-model.ts` and
+  `src/scene/interior/build-bedroom.ts`.
+- Camera phases and covered handoff: `src/experience/camera-story.ts`.
+- Semantic skip/retry/status/veil: `src/ui/intro-controls.ts` and styles.
+- Loading/retry/teardown and light activation: `src/main.ts` and
+  `src/scene/create-scene.ts`.
+
+Focused checks use Python's standard unittest runner with an existing
+Playwright installation and Chrome; they add no app runtime dependency.
+With a Vite dev server running:
+
+```powershell
+python tests/validate_bedroom_glb.py
+$env:GARDEN_TEST_URL='http://127.0.0.1:5175'
+python tests/bedroom_browser.py
+```
+
+For compiled production preview behavior, set `GARDEN_TEST_URL` to that
+preview URL and run `python tests/bedroom_browser.py ExperienceChecks`.
+Loader/story module checks require the dev server's TS module handling.
+
+## Final M2 evidence
+
+- **PASS:** typecheck and production build; final bundle
+  `index-B6LR-9Es.js`, about 753.69 kB minified / 204.54 kB gzip.
+- **PASS:** packed asset contract and limits. Room: 2,186,796 bytes,
+  39,140 triangles, 29 primitives, 19 materials, 9 embedded images.
+- **PASS:** 17 focused dev-browser checks (85.185 seconds), including
+  loader validation, abort during decode, late disposal, exterior
+  regression, covered switching, failure restoration, queued/repeated
+  skip, live reduced-motion changes, resize, room failure/retry, decode
+  deadline/retry, teardown during retry/reveal, and WebGL fallback.
+- **PASS:** the seven experience checks on compiled production preview
+  (70.859 seconds).
+- **PASS:** desktop 1440×900 and portrait 390×844 establishing, arrival,
+  room and desk captures; sampled cover/switch/uncover sequence inspected;
+  no unexpected JavaScript errors or external resource requests observed.
+- **PASS:** two independent read-only reviews of the same frozen source
+  revision, both with no actionable findings. Requested model/effort:
+  `gpt-6-luna` / `high`; resolved runtime settings were not exposed.
+  Both reviewers share the requested model family, so correlated blind
+  spots remain possible. Their reviews did not rerun runtime gates.
+- **FAIL:** warning-free desktop console; the pre-existing driver shader
+  precision warning X4122 persists. Portrait capture had no warnings.
+- **NOT_RUN:** physical-phone performance and full-video temporal review.
+  Stills and covered-switch regressions bound the continuity evidence;
+  user visual acceptance remains separate from technical checks.
+
+GLB SHA-256:
+`c8e614b801a0c41a7e11d1f7f3a275f4e62eea8876a042f1e13bb79f0776b2f6`.
+Frozen Git-blob manifest SHA-256:
+`679d81dc72b499c7e503c3264bfdb820d5dd2e59b5f2c5eebdd6d9a4e1cb1afc`.
+The manifest covers runtime source, assets, tests and current requirements;
+the handoff report itself is excluded.
+
+Measured GL submissions include color and shadow passes: room and desktop
+desk 58 draws / 78,280 triangles; portrait desk 52 / 73,104. These are
+scene submission counts, not a physical-device frame-rate guarantee.
+Vite's JavaScript chunk-size warning remains.
+
+## Recovery and next milestone
+
+Both assets begin loading independently. Each request/parse attempt has a
+12-second deadline. Room failure leaves the exterior usable and offers
+one retry; stale/aborted parse results are disposed. Skip goes to the desk
+when the room is ready, or the exterior arrival when it is unavailable.
+Reduced motion bypasses the tour and sway. A resize preserves the active
+phase; teardown stops camera/sway, aborts requests and releases resources.
+
+For M3, first settle the spec's outstanding watering-time decision:
+preserve accumulated valid watering time when paused, or reset it.
+Keep the can/pot/plant nodes independent and respect the current asset
+coordinates. Do not reintroduce a nonfunctional watering control into M2.
+The exterior asset is unchanged. `.vercel` is preserved. No merge,
+deployment or M2 remote push was performed.
+
+---
+
+# Historical Milestone 1 handoff
 
 ## Current state
 
