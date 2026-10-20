@@ -19,8 +19,10 @@ ivory paper card. Reduced motion presents the finished arrangement immediately.
 Keep accepted room/camera/GLBs unchanged. No particles, post-processing or new
 dependency. Readable native card button mirrors canvas picking. A native modal
 dialog shows editable Vietnamese text, handles Escape/close and restores focus.
-The sender has not supplied personal text; use a clearly documented neutral
-default in `src/content/gift-message.ts`, with no invented identity or memories.
+At the time this plan was written, the sender had not yet supplied personal
+text. **Superseded by the 2026-10-20 user amendment in `docs/PROJECT_SPEC.md`:**
+the sender has supplied personal text in `src/content/gift-message.ts`; preserve
+its exact salutation and four paragraphs.
 
 ## Implementation and evidence
 

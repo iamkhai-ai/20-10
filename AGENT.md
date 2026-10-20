@@ -8,7 +8,7 @@ Build a warm, personal 20/10 gift as a browser-based Three.js storybook diorama.
 
 ## Current scope
 
-Implement one milestone at a time. M1 exterior, refined M2 bedroom and M3 watering have been delivered. On 2026-10-20 the user requested immediate M4 implementation under the existing PROJECT_SPEC: staged tulip growth and opening petals, followed by an actionable paper card and accessible Vietnamese greeting dialog. See the [M4 execution note](docs/superpowers/plans/2026-10-20-bloom-card.md). Preserve the accepted room, five-second watering behavior and loading/recovery paths. Greeting content belongs in `src/content/gift-message.ts`; until supplied, use a documented neutral default without invented identities or memories. Follow the personal policy's two independent final read-only reviews. Local implementation does not authorize deployment, merge or push.
+Implement one milestone at a time. M1 exterior, refined M2 bedroom and M3 watering have been delivered. On 2026-10-20 the user requested immediate M4 implementation under the existing PROJECT_SPEC: staged tulip growth and opening petals, followed by an actionable paper card and accessible Vietnamese greeting dialog. See the [M4 execution note](docs/superpowers/plans/2026-10-20-bloom-card.md). Preserve the accepted room, five-second watering behavior and loading/recovery paths. Greeting content belongs in `src/content/gift-message.ts`; the sender has supplied the personalized wording, so preserve it exactly. Follow the personal policy's two independent final read-only reviews. Do not deploy, merge or push unless the user explicitly authorizes that action.
 
 ## Technical rules
 
@@ -19,8 +19,8 @@ uses nine reusable jets; validate the complete shower footprint inside the soil.
 See the user amendment in PROJECT_SPEC. Preserve prior accessibility/recovery.
 The current can follows the user's reference: a slender ivory cylindrical body,
 pressed rings, arched carrying strap, straight spout and flat circular rose.
-The earlier round and low oval prototypes are superseded. The planter is pearl-white with subtle
-translucency. The sender has now supplied the personal greeting in
+The earlier round and low oval prototypes are superseded. The planter is
+pearl-white with subtle translucency. The sender has supplied the greeting in
 `src/content/gift-message.ts`; preserve its exact “ảnh–ẻm” wording.
 
 - Use Vite, strict TypeScript, Three.js, and GSAP. Do not add a UI framework or other runtime dependency without a clear need and approval.
