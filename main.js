@@ -39,6 +39,10 @@ const matPot = new THREE.MeshStandardMaterial({ color: 0xb5651d, roughness: 0.9 
 const matSoil = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 1 });
 const matSeed = new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.9 });
 const matCan = new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.5, metalness: 0.3 });
+const matWater = new THREE.MeshStandardMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.75 });
+const matGreen = new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.8 });
+const matPetal = new THREE.MeshStandardMaterial({ color: 0xff6b9d, roughness: 0.6 });
+const matCard = new THREE.MeshBasicMaterial({ color: 0xfff7e6, side: THREE.DoubleSide });
 
 const house = new THREE.Group();
 const floor = new THREE.Mesh(new THREE.PlaneGeometry(20, 20), matFloor);
@@ -110,26 +114,241 @@ const canHandle = new THREE.Mesh(new THREE.TorusGeometry(0.09, 0.02, 8, 16, Math
 canHandle.position.set(-0.05, 0.12, 0);
 canHandle.rotation.x = Math.PI / 2;
 canGroup.add(canHandle);
-canGroup.position.set(0.85, 1.0, -0.2);
+const canInitial = new THREE.Vector3(0.85, 1.0, -0.2);
+canGroup.position.copy(canInitial);
 interior.add(canGroup);
+
+const plant = new THREE.Group();
+plant.position.set(0, 1.1, -0.2);
+plant.scale.set(0.001, 0.001, 0.001);
+const stem = new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.03, 0.6, 8), matGreen);
+stem.position.set(0, 0.3, 0);
+plant.add(stem);
+for (const [x, z] of [[0.08, 0.05], [-0.08, -0.04]]) {
+  const leaf = new THREE.Mesh(new THREE.SphereGeometry(0.07, 12, 12), matGreen);
+  leaf.scale.set(1.4, 0.4, 1);
+  leaf.position.set(x, 0.25, z);
+  plant.add(leaf);
+}
+const flowerCluster = new THREE.Group();
+flowerCluster.position.set(0, 0.62, 0);
+plant.add(flowerCluster);
+for (let i = 0; i < 7; i++) {
+  const a = (i / 7) * Math.PI * 2;
+  const petal = new THREE.Mesh(new THREE.SphereGeometry(0.05, 12, 12), matPetal);
+  petal.position.set(Math.cos(a) * 0.09, 0, Math.sin(a) * 0.09);
+  flowerCluster.add(petal);
+}
+const flowerCenter = new THREE.Mesh(new THREE.SphereGeometry(0.04, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffeb3b }));
+flowerCluster.add(flowerCenter);
+interior.add(plant);
+
+const card = new THREE.Mesh(new THREE.PlaneGeometry(0.35, 0.22), matCard);
+card.position.set(0, 1.85, -0.2);
+card.visible = false;
+interior.add(card);
 
 scene.add(interior);
 
-let zoomT = 0;
+const raycaster = new THREE.Raycaster();
+const pointer = new THREE.Vector2();
+const dragPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -1.0);
+let dragging = false;
+let dragOffset = new THREE.Vector3();
+let pouring = false;
+let pourT = 0;
+let pourStart = new THREE.Vector3();
+let waterCount = 0;
+const waterTarget = 5;
+let bloomed = false;
+let bloomT = 0;
+let bloomDone = false;
+let focusingCard = false;
+let focusT = 0;
+const focusStart = new THREE.Vector3();
+const focusEnd = new THREE.Vector3(0, 1.85, 0.15);
+const focusLookStart = new THREE.Vector3();
+const focusLookEnd = new THREE.Vector3(0, 1.85, -0.2);
+const waterDrops = [];
+
+function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+
+let zooming = true;
 const zoomDuration = 4;
 const startCam = new THREE.Vector3(0, 2.8, 9);
 const endCam = new THREE.Vector3(0, 1.6, 0.9);
 const lookStart = new THREE.Vector3(0, 1.5, 0);
 const lookEnd = new THREE.Vector3(0, 0.9, -0.2);
+let zoomT = 0;
 
-function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2; }
+let audioCtx = null;
+function ensureAudio() {
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+}
+function playWater() {
+  ensureAudio();
+  const ctx = audioCtx;
+  const dur = 0.5;
+  const buf = ctx.createBuffer(1, ctx.sampleRate * dur, ctx.sampleRate);
+  const data = buf.getChannelData(0);
+  for (let i = 0; i < data.length; i++) data[i] = (Math.random() * 2 - 1) * 0.6;
+  const src = ctx.createBufferSource();
+  src.buffer = buf;
+  const filter = ctx.createBiquadFilter();
+  filter.type = 'lowpass';
+  filter.frequency.value = 900;
+  const gain = ctx.createGain();
+  gain.gain.setValueAtTime(0.25, ctx.currentTime);
+  gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + dur);
+  src.connect(filter).connect(gain).connect(ctx.destination);
+  src.start();
+}
+function playBloom() {
+  ensureAudio();
+  const ctx = audioCtx;
+  [523.25, 659.25, 783.99, 1046.5].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'sine';
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.12);
+    gain.gain.exponentialRampToValueAtTime(0.18, ctx.currentTime + i * 0.12 + 0.05);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.12 + 0.35);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(ctx.currentTime + i * 0.12);
+    osc.stop(ctx.currentTime + i * 0.12 + 0.4);
+  });
+}
+function playCard() {
+  ensureAudio();
+  const ctx = audioCtx;
+  [880, 1174.66].forEach((f, i) => {
+    const osc = ctx.createOscillator();
+    const gain = ctx.createGain();
+    osc.type = 'triangle';
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime + i * 0.1);
+    gain.gain.exponentialRampToValueAtTime(0.15, ctx.currentTime + i * 0.1 + 0.04);
+    gain.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + i * 0.1 + 0.4);
+    osc.connect(gain).connect(ctx.destination);
+    osc.start(ctx.currentTime + i * 0.1);
+    osc.stop(ctx.currentTime + i * 0.1 + 0.45);
+  });
+}
 
-let zooming = true;
+function setPointer(e) {
+  const rect = renderer.domElement.getBoundingClientRect();
+  const c = e.touches ? e.touches[0] : e;
+  pointer.x = ((c.clientX - rect.left) / rect.width) * 2 - 1;
+  pointer.y = -((c.clientY - rect.top) / rect.height) * 2 + 1;
+}
+
+function onDown(e) {
+  ensureAudio();
+  if (zooming || focusingCard) return;
+  setPointer(e);
+  raycaster.setFromCamera(pointer, camera);
+  if (bloomDone) {
+    const hits = raycaster.intersectObject(card, false);
+    if (hits.length) { openCard(); return; }
+  }
+  const hits = raycaster.intersectObject(canGroup, true);
+  if (hits.length) {
+    dragging = true;
+    const pt = hits[0].point;
+    dragOffset.copy(pt).sub(canGroup.position);
+    renderer.domElement.style.cursor = 'grabbing';
+  }
+}
+
+function onMove(e) {
+  if (!dragging) return;
+  e.preventDefault();
+  setPointer(e);
+  raycaster.setFromCamera(pointer, camera);
+  const target = new THREE.Vector3();
+  if (raycaster.ray.intersectPlane(dragPlane, target)) {
+    canGroup.position.copy(target.sub(dragOffset));
+  }
+}
+
+function onUp() {
+  if (!dragging) return;
+  dragging = false;
+  renderer.domElement.style.cursor = 'default';
+  const dx = canGroup.position.x;
+  const dz = canGroup.position.z + 0.2;
+  if (Math.hypot(dx, dz) < 0.35 && !pouring) {
+    pour();
+  } else {
+    snapCan();
+  }
+}
+
+function snapCan() {
+  canGroup.position.copy(canInitial);
+  canGroup.rotation.z = 0;
+}
+
+function pour() {
+  pouring = true;
+  pourT = 0;
+  pourStart.copy(canGroup.position);
+  playWater();
+}
+
+function spawnWater() {
+  const drop = new THREE.Mesh(new THREE.SphereGeometry(0.025, 8, 8), matWater);
+  const spoutPos = new THREE.Vector3();
+  canSpout.getWorldPosition(spoutPos);
+  drop.position.copy(spoutPos);
+  drop.userData.vel = new THREE.Vector3((Math.random() - 0.5) * 0.03, -0.15, (Math.random() - 0.5) * 0.03);
+  scene.add(drop);
+  waterDrops.push(drop);
+}
+
+function updateProgress() {
+  hint.textContent = `Tưới: ${waterCount}/${waterTarget} — ${waterCount >= waterTarget ? 'Hoa đang nở...' : 'Tiếp tục tưới nhé'}`;
+  const s = 1 + waterCount * 0.15;
+  seed.scale.set(s, s, s);
+  seed.material.color.setHSL(0.28 - waterCount * 0.02, 0.5, 0.35);
+}
+
+function bloomPlant() {
+  bloomed = true;
+  bloomT = 0;
+  playBloom();
+  hint.textContent = 'Hoa đang nở rộ...';
+}
+
+function openCard() {
+  if (focusingCard) return;
+  focusingCard = true;
+  focusT = 0;
+  focusStart.copy(camera.position);
+  focusLookStart.copy(focusLookEnd).sub(new THREE.Vector3(0, 0, 0)); // placeholder
+  // set look start from current look target approx
+  focusLookStart.set(0, 0.9, -0.2);
+  playCard();
+  card.scale.set(1, 1, 1);
+}
+
+renderer.domElement.addEventListener('pointerdown', onDown);
+renderer.domElement.addEventListener('pointermove', onMove);
+renderer.domElement.addEventListener('pointerup', onUp);
+renderer.domElement.addEventListener('pointerleave', onUp);
+renderer.domElement.addEventListener('touchstart', (e) => { e.preventDefault(); onDown(e); }, { passive: false });
+renderer.domElement.addEventListener('touchmove', (e) => { e.preventDefault(); onMove(e); }, { passive: false });
+renderer.domElement.addEventListener('touchend', (e) => { e.preventDefault(); onUp(); }, { passive: false });
+
+closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
+
 const clock = new THREE.Clock();
 
 function animate() {
   requestAnimationFrame(animate);
   const dt = clock.getDelta();
+
   if (zooming) {
     zoomT = Math.min(1, zoomT + dt / zoomDuration);
     const e = ease(zoomT);
@@ -140,7 +359,62 @@ function animate() {
       zooming = false;
       hint.textContent = 'Kéo bình nước để tưới mầm cây';
     }
+  } else if (focusingCard) {
+    focusT = Math.min(1, focusT + dt / 1.2);
+    const e = ease(focusT);
+    camera.position.lerpVectors(focusStart, focusEnd, e);
+    const look = new THREE.Vector3().lerpVectors(focusLookStart, focusLookEnd, e);
+    camera.lookAt(look);
+    if (focusT >= 1) {
+      focusingCard = false;
+      modal.style.display = 'flex';
+    }
   }
+
+  if (pouring) {
+    pourT = Math.min(1, pourT + dt / 1.0);
+    const e = ease(pourT);
+    const targetPos = new THREE.Vector3(0, 1.35, -0.2);
+    canGroup.position.lerpVectors(pourStart, targetPos, e);
+    canGroup.rotation.z = -1.2 * e;
+    if (Math.random() < 0.35) spawnWater();
+    if (pourT >= 1) {
+      pouring = false;
+      canGroup.rotation.z = 0;
+      snapCan();
+      waterCount++;
+      updateProgress();
+      if (waterCount >= waterTarget) bloomPlant();
+    }
+  }
+
+  if (bloomed && !bloomDone) {
+    bloomT = Math.min(1, bloomT + dt / 2.0);
+    const e = ease(bloomT);
+    const s = 0.001 + e * 0.999;
+    plant.scale.set(s, s, s);
+    if (bloomT >= 1) {
+      bloomDone = true;
+      card.visible = true;
+      hint.textContent = 'Bấm vào tấm thiệp giữa khóm hoa 💌';
+    }
+  }
+
+  if (card.visible) {
+    card.position.y = 1.85 + Math.sin(clock.elapsedTime * 2) * 0.05;
+    card.rotation.y = Math.sin(clock.elapsedTime * 1.2) * 0.15;
+  }
+
+  for (let i = waterDrops.length - 1; i >= 0; i--) {
+    const d = waterDrops[i];
+    d.position.add(d.userData.vel);
+    d.userData.vel.y -= 0.004;
+    if (d.position.y < 1.12) {
+      scene.remove(d);
+      waterDrops.splice(i, 1);
+    }
+  }
+
   renderer.render(scene, camera);
 }
 animate();
@@ -152,5 +426,4 @@ window.addEventListener('resize', () => {
 });
 
 loading.style.display = 'none';
-closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
 modalText.textContent = 'Chúc em 20/10 thật hạnh phúc, luôn xinh đẹp và rạng rỡ. Anh yêu em nhiều lắm! 💐';
