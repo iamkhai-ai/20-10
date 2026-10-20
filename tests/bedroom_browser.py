@@ -143,5 +143,74 @@ class LoaderChecks(BrowserCase):
         self.assertEqual(self.errors,[])
 
 
+class StoryChecks(BrowserCase):
+    def probe(self, action):
+        self.isolated()
+        return self.page.evaluate('''async action => {
+          const {createStoryProbe}=await import('/tests/bedroom-harness.ts');
+          return new Function('createStoryProbe',action)(createStoryProbe);
+        }''', action)
+
+    def test_story_waits_for_room(self):
+        result=self.probe('''const p=createStoryProbe();p.finish();const waiting=p.snapshot();
+          p.story.setBedroom(p.bedroom);p.finish();const final=p.snapshot();p.story.dispose();return {waiting,final};''')
+        self.assertEqual(result['waiting']['phase'],'window-arrival')
+        self.assertEqual(result['final']['phase'],'desk-settled')
+        self.assertEqual(result['final']['veil'],0)
+
+    def test_handoff_is_covered(self):
+        result=self.probe('''const p=createStoryProbe();p.story.setBedroom(p.bedroom);
+          p.finish();const result=p.snapshot();p.story.dispose();return result;''')
+        self.assertEqual(result['locations'],[['bedroom',1]])
+        self.assertEqual(result['errors'],[])
+        self.assertEqual(result['phase'],'desk-settled')
+
+    def test_skip_and_motion_idempotence(self):
+        result=self.probe('''const all=[];
+          for(const stage of ['pending','cover','uncover','reduced','failed']){
+            const p=createStoryProbe(stage==='reduced');
+            if(stage==='cover'||stage==='uncover'){
+              p.finish();p.story.setBedroom(p.bedroom);p.step(stage==='cover'?.6:1.5);
+              p.camera.aspect=.46;p.story.reframe();p.story.setReducedMotion(true);
+            }else if(stage==='failed'){p.story.setBedroomUnavailable();}
+            p.story.skip();p.story.skip();
+            if(stage!=='failed')p.story.setBedroom(p.bedroom);
+            p.finish();all.push({stage,...p.snapshot(),maxVeil:Math.max(0,...p.veils)});p.story.dispose();
+          }return all;''')
+        for r in result:
+            with self.subTest(stage=r['stage']):
+                self.assertEqual(r['phase'],'bedroom-unavailable' if r['stage']=='failed' else 'desk-settled')
+                self.assertEqual(r['veil'],0)
+                self.assertLessEqual(len(r['locations']),1)
+                self.assertEqual(r['errors'],[])
+                if r['stage']=='reduced':self.assertEqual(r['maxVeil'],0)
+
+    def test_story_disposal(self):
+        result=self.probe('''const p=createStoryProbe();p.story.setBedroom(p.bedroom);p.step(2);
+          p.story.dispose();const count=p.phases.length+p.locations.length+p.veils.length;
+          p.story.skip();p.story.reframe();p.story.setReducedMotion(true);p.story.setBedroom(p.bedroom);p.finish();
+          return {count,after:p.phases.length+p.locations.length+p.veils.length};''')
+        self.assertEqual(result['count'],result['after'])
+
+    def test_failed_switch_restores_exterior(self):
+        self.isolated()
+        result=self.page.evaluate('''async () => {
+          const {THREE,gsap}=await import('/tests/bedroom-harness.ts');
+          const {createCameraStory}=await import('/src/experience/camera-story.ts');
+          const camera=new THREE.PerspectiveCamera();const pose={position:new THREE.Vector3(0,2,6),target:new THREE.Vector3(0,1,0)};
+          const locations=[];let phase,veil,error;
+          const story=createCameraStory(camera,()=>({intro:pose,arrival:pose}),{reducedMotion:false,
+            onLocation:l=>{locations.push(l);if(l==='bedroom')throw Error('Switch failed after activation');},
+            onPhase:p=>phase=p,onVeil:v=>veil=v,onError:e=>error=String(e)});
+          story.setBedroom(()=>({entry:pose,room:pose,desk:pose}));
+          for(let i=0;i<6;i++)for(const t of gsap.globalTimeline.getChildren(false,true,true))t.totalProgress(1,false);
+          story.dispose();return {locations,phase,veil,error};
+        }''')
+        self.assertEqual(result['locations'],['bedroom','exterior'])
+        self.assertEqual(result['phase'],'bedroom-unavailable')
+        self.assertEqual(result['veil'],0)
+        self.assertIn('Switch failed',result['error'])
+
+
 if __name__=='__main__':
     unittest.main(verbosity=2)

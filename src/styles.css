@@ -70,7 +70,7 @@ body {
 
 button {
   width: fit-content;
-  min-height: 42px;
+  min-height: 44px;
   padding: 0 17px;
   border: 1px solid rgba(52, 70, 58, 0.68);
   border-radius: 999px;
@@ -99,6 +99,20 @@ button:active {
 button:focus-visible {
   outline: 3px solid #a85f48;
   outline-offset: 3px;
+}
+
+#transition-veil {
+  position: fixed;
+  inset: 0;
+  z-index: 8;
+  opacity: 0;
+  pointer-events: none;
+  background-color: #ece1cf;
+  background-image: repeating-linear-gradient(90deg, transparent 0 3px, rgba(111, 91, 57, 0.025) 4px 5px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  button { transition: none; }
 }
 
 @media (max-width: 520px) {
