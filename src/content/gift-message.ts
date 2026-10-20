@@ -1,14 +1,14 @@
-// Neutral default: replace this content with the sender's message before gifting.
-// No recipient/sender identity or relationship is assumed.
+// Personal wording supplied by the sender on 2026-10-20.
 export const giftMessage = {
-  personalized: false,
+  personalized: true,
   date: '20.10',
   title: 'Chúc mừng 20/10',
-  salutation: 'Gửi bạn,',
+  salutation: 'Gửi ẻm,',
   paragraphs: [
-    'Chúc bạn một ngày 20/10 thật dịu dàng, có những niềm vui nhỏ và thật nhiều điều đáng mỉm cười.',
-    'Mong bạn luôn được yêu thương, được là chính mình và có đủ bình yên để làm những điều mình thích.',
-    'Một khu vườn nhỏ, gửi cùng những lời chúc tốt lành dành cho bạn.',
+    'Chúc ẻm có một ngày 20/10 thật dịu dàng, có được những niềm vui nhỏ và thật nhiều điều đáng yêu.',
+    'Mong ẻm luôn mỉm cười, luôn được yêu thương và được làm những điều mình muốn.',
+    'Vài bông hoa tuy líp, thay cho những lời yêu thương của ảnh gửi cho ẻm.',
+    'Iu ẻm.',
   ],
   cardCaption: 'dành cho bạn',
   coverTitle: 'Một chút dịu dàng',

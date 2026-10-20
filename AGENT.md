@@ -17,6 +17,11 @@ freeze on pause. Five seconds finishes the flowers; only the card reveal follows
 Both the 3D card and dialog use botanical folded-paper styling. The smaller can
 uses nine reusable jets; validate the complete shower footprint inside the soil.
 See the user amendment in PROJECT_SPEC. Preserve prior accessibility/recovery.
+The current can follows the user's reference: a slender ivory cylindrical body,
+pressed rings, arched carrying strap, straight spout and flat circular rose.
+The earlier round and low oval prototypes are superseded. The planter is pearl-white with subtle
+translucency. The sender has now supplied the personal greeting in
+`src/content/gift-message.ts`; preserve its exact “ảnh–ẻm” wording.
 
 - Use Vite, strict TypeScript, Three.js, and GSAP. Do not add a UI framework or other runtime dependency without a clear need and approval.
 - Keep modules focused: scene setup owns renderer/camera/lights; object builders own their geometry/materials; the experience module owns camera choreography; HTML controls remain semantic DOM.

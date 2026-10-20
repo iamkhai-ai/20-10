@@ -9,7 +9,8 @@ from pathlib import Path
 import numpy as np
 from mathutils import Vector
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from bedroom_surfaces import surface, bake_static_occlusion, image, texture
+from bedroom_surfaces import surface, bake_static_occlusion, image, texture, glaze_finish
+from watering_can import build_watering_can
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'public/models/bedroom.glb'
@@ -51,13 +52,13 @@ rose = mat('Dusty rose quilt', (.89,.87,.81), .94, 'fabric')
 throw = mat('Sage woven throw', (.46,.54,.42), .96, 'fabric')
 cream = mat('Ivory cotton', (.92,.87,.77), .96, 'fabric')
 brass = mat('Soft aged brass', (.56,.38,.16), .38)
-ceramic = mat('Hand thrown clay', (.96,.88,.69), .27, 'plaster')
-glaze_cream = mat('Cream glazed rim', (.93,.87,.74), .30)
+ceramic = glaze_finish(mat('Hand thrown clay', (.90,.945,.94), .20, 'plaster'), transmission=.10, coat=.65)
+glaze_cream = glaze_finish(mat('Cream glazed rim', (.94,.965,.94), .22))
 glaze_rose = mat('Rose painted petals', (.76,.45,.49), .38)
 soil = mat('Dark potting earth', (.13,.10,.065), 1, 'plaster')
 green = mat('Living leaf', (.25,.42,.23), .72)
 leaflight = mat('Young leaf', (.42,.56,.29), .75)
-canmat = mat('Sage enamel', (.56,.72,.76), .28, 'enamel')
+canmat = glaze_finish(mat('Sage enamel', (.92,.87,.76), .28, 'enamel'), coat=.25)
 dark = mat('Quiet shadow', (.18,.24,.17), .9)
 gold = mat('Lamp linen glow', (.96,.78,.43), .85, emission=.15)
 sky = mat('Window daylight', (.70,.83,.82), .98, emission=.35)
@@ -380,30 +381,8 @@ for j in range(7):
     end=(1.1+math.cos(a)*.22,y+.11,-.88+math.sin(a)*.15)
     leaf('Seedling leaf',(1.10,y,-.88),end,.075,green if j%2 else leaflight,plant)
 
-# Slim oval pastel can with one swept handle, rolled rim and a fine spout.
-body=lathe('Oval enamel can body',(1.91,1.085,-.85),[(0,0),(.15,0),(.175,.015),(.19,.045),(.195,.16),(.18,.26),(.17,.282),(.157,.282),(.155,.26),(.17,.16),(.15,.045),(0,.04)],canmat,can)
-for v in body.data.vertices:v.co.y=.85+(v.co.y-.85)*.78
-lip=lathe('Rolled brass filling rim',(1.91,1.085,-.85),[(.157,.276),(.17,.276),(.177,.284),(.172,.292),(.16,.294),(.154,.287),(.157,.276)],brass,can)
-for v in lip.data.vertices:v.co.y=.85+(v.co.y-.85)*.78
-opening=lathe('Can dark opening',(1.91,1.085,-.85),[(0,.25),(.154,.25)],dark,can)
-for v in opening.data.vertices:v.co.y=.85+(v.co.y-.85)*.78
-tube('Single swept can handle',[(2.065,1.33,-.85),(2.27,1.39,-.85),(2.32,1.19,-.85),(2.075,1.13,-.85)],.015,canmat,can)
-tube('Tapered can spout',[(1.75,1.17,-.85),(1.58,1.27,-.85),(1.43,1.49,-.85)],.033,canmat,can,radii=[1,.70,.43])
-axis=Vector((-.55,.835,0)).normalized();across=Vector((0,0,1));up=axis.cross(across)
-tip=Vector((1.43,1.49,-.85));verts=[];faces=[]
-for t,r in ((-.012,.015),(.008,.020),(.030,.043),(.038,.046),(.042,.041)):
-    for i in range(33):
-        a=i/32*math.tau;verts.append(tuple(tip+axis*t+(across*math.cos(a)+up*math.sin(a))*r))
-for j in range(4):
-    for i in range(32):k=j*33+i;faces.append((k,k+33,k+34,k+1))
-faces.append(tuple(range(4*33,5*33)))
-mesh('Formed brass watering rose',verts,faces,brass,can)
-for r,count in ((0,1),(.016,6),(.031,10)):
-    for i in range(count):
-        a=i/count*math.tau;c=tip+axis*.0425+(across*math.cos(a)+up*math.sin(a))*r
-        points=[tuple(c)]+[tuple(c+(across*math.cos(t)+up*math.sin(t))*.0024)
-                         for t in np.linspace(0,math.tau,9)]
-        mesh('Recessed sprinkler perforation',points,[(0,j,j+1) for j in range(1,9)],dark,can,smooth=False)
+# Reference-led ivory cylinder, carrying arch, straight spout and nine-hole rose.
+build_watering_can(can, canmat, glaze_cream, brass, dark)
 
 for name,pos in [('window_anchor',(1.05,2.15,-2.0)),('room_target',(0,1.30,-.28)),
                  ('desk_target',(1.40,1.55,-.90)),('pot_target',(1.10,1.48,-.88))]:

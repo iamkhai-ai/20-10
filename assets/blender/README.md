@@ -3,7 +3,8 @@
 ## Milestone 2 bedroom source
 
 The original bedroom is authored separately in `create-bedroom.py`, its
-`bedroom_surfaces.py` surface/bake helper, and `bedroom.blend`. Rebuild from
+`bedroom_surfaces.py` surface/bake helper, `watering_can.py` prop builder,
+and `bedroom.blend`. Rebuild from
 the repository root with the same Blender:
 
 ```powershell
@@ -34,10 +35,13 @@ is applied to it.
 
 The current visual revision uses sewn cushions, naturally draped milk-cream bedding,
 staggered oak boards, tapered pale-oak desk legs and shaped leaves.
-The compact pastel-blue can has an oval body, one slender swept handle,
-a fine long spout, a rolled brass filling rim and a small perforated rose.
-The rounded planter has butter-yellow
-glaze, a cream rim/saucer and small painted rose flowers. Upper walls are
+The can follows the user's photo reference: a slender upright ivory cylinder,
+shallow pressed rings, an arched carrying strap, a long straight tapered spout
+and a flat circular nine-hole rose. Earlier round and low oval prototypes
+are superseded. The spout faces left toward the planter in this scene.
+The rounded planter has milky pearl-white glaze with a slight jade cast,
+10% transmission, 65% clearcoat, an ivory rim/saucer and small painted rose
+flowers. Upper walls are
 clean mist blue, paneling light sage and floorboards neutral blond oak,
 following the user's latest color feedback. Material names such as
 `Hand thrown clay`, `Dusty rose quilt`, `Sage enamel` and `Warm limewash`
@@ -45,9 +49,9 @@ remain stable for validation even
 though their palette changed. Three.js owns the window-directed sunlight;
 baked occlusion is attenuated for a clean wall finish.
 
-The room export has 45,449 triangles, 37 primitives, 24 materials and
-26 embedded images (4,871,584 bytes). Final GLB SHA-256:
-`d3050738274f5062507f7869ce90f8d4c5cfef1969d9bd5ea001f9d4770f0268`.
+The room export has 49,101 triangles, 36 primitives, 24 materials and
+26 embedded images (4,959,256 bytes). Current GLB SHA-256:
+`de001938eec63dadfa9c040220b5e53f8b97d1f3583c268b06897049ff0dfd8c`.
 Validate actual packed resource,
 hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
 The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.
@@ -55,16 +59,40 @@ The can is a prop at M2; watering is not implemented by the asset.
 
 ### M3 runtime calibration
 
-Watering uses the unchanged accepted GLB. `build-bedroom.ts` attaches a
+The redesigned can preserves the authored pivot and rose center; its direction
+now follows the straight reference spout.
+`build-bedroom.ts` attaches a
 runtime outlet near room `(1.407, 1.525, -0.85)` to `watering_can`, with
-rest direction `(-0.55, 0.835, 0)` transformed into can-local coordinates.
+normalized rest direction `(-0.383, 0.355, 0)` transformed into can-local coordinates.
 The soil target is `(1.10, 1.405, -0.88)` under `plant_pot`, inner radius
 0.14. `build-watering.ts` rotates the can 90 degrees and places the outlet
 0.24 above its soil intersection, offset `(0.065, 0, 0.045)` beside the
 stem. Final validity uses current transformed outlet direction and soil
 intersection, not screen coordinates. Update this calibration and its
 tests if reauthoring the can or planter. Owned water effects are runtime
-geometry; the packed GLB and its resource caps remain unchanged.
+geometry; the packed asset has changed within the existing resource caps.
+Runtime uniform can scaling remains0.82 and automatic alignment includes it.
+The eight ring holes use authored radius0.0134, matching the runtime0.011
+jet ring after scaling, plus one center hole.
+
+### Targeted watering-set refresh
+
+`refresh-watering-set.py` opens the saved `.blend`, rebuilds only the can via
+the same `watering_can.py` builder used by the full script, and updates can/pot
+materials. It reuses the static room AO atlas. New movable can geometry samples
+a white AO patch through UV1; it never rebakes or repacks the accepted room.
+
+```powershell
+& $blenderExe --background --python assets/blender/refresh-watering-set.py
+```
+
+The final refresh and GLB validation ran. Semantic comparison of decoded geometry
+attributes, indices, material names and transforms confirmed that room_shell,
+desk, plant_pot, plant_rest, both curtains and window_backdrop geometry/transforms
+are unchanged. Only the can geometry and intended material finishes changed.
+A full clean room rebake was NOT_RUN for this targeted revision. Transmission
+adds renderer submissions; capture measurements are recorded in the handoff,
+without claiming physical-phone FPS.
 
 ## Milestone 1 exterior source
 

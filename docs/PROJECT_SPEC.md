@@ -356,7 +356,19 @@ nine thin jets spread from the rose, with the entire footprint inside the soil.
 Keep all existing input, focus, pause/resume, retry and teardown guarantees.
 This is local implementation authorization, not permission to publish or deploy.
 
-### Original timing decision (still applies)
+### Subsequent user appearance and message amendments
+
+The user's supplied photo reference supersedes the round and low oval prototypes.
+Use a slender upright ivory cylindrical can with shallow pressed rings, an arched
+carrying strap, a long straight tapered spout and a flat circular rose. Mirror the
+spout toward the planter in the room. Preserve the nine-jet watering route.
+The planter changes to pearl-white glaze with slight translucency, per the user.
+Keep the room/desk/plant/curtain geometry and camera composition intact.
+The user supplied the final card wording beginning “Gửi ẻm,” and ending “Iu ẻm.”.
+Its exact salutation and four paragraphs in `src/content/gift-message.ts` are now
+personalized content, replacing the neutral default; preserve the supplied text.
+
+### Original accumulated-time approval
 
 Resolved by the user on 2026-10-20: **preserve accumulated valid watering time when input stops or the can moves away from the pot**. Resume from that amount until five valid seconds have accumulated; do not reset progress on a pause. Reloading the page starts a fresh experience.
 

@@ -69,7 +69,7 @@ export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
   const inverse = new THREE.Matrix4().copy(can.matrixWorld).invert();
   const watering: BedroomWateringRig = { room: group, can, pot: model.nodes.plant_pot,
     plant: model.nodes.plant_rest, outlet, soilTarget, soilRadius: 0.14,
-    outletDirection: new THREE.Vector3(-0.55, 0.835, 0).normalize().transformDirection(inverse) };
+    outletDirection: new THREE.Vector3(-0.383, 0.355, 0).normalize().transformDirection(inverse) };
   // Calibrate in authored coordinates first, then resize the complete prop and outlet together.
   can.scale.multiplyScalar(0.82);
   return { group, watering, swayTargets: [model.nodes.curtain_left, model.nodes.curtain_right],

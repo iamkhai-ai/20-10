@@ -92,6 +92,15 @@ def surface(name, color, roughness=.8, kind=None, emission=0):
     return m
 
 
+def glaze_finish(material, transmission=0, coat=.45):
+    bsdf=material.node_tree.nodes.get('Principled BSDF')
+    bsdf.inputs['Coat Weight'].default_value=coat
+    bsdf.inputs['Coat Roughness'].default_value=.12
+    bsdf.inputs['Transmission Weight'].default_value=transmission
+    bsdf.inputs['IOR'].default_value=1.45
+    return material
+
+
 def bake_static_occlusion(root):
     objects=[o for o in root.children_recursive if o.type=='MESH']
     for o in objects:
