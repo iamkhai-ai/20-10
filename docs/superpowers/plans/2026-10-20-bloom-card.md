@@ -18,8 +18,11 @@ petals in dusty rose/cream. **Historical timing, superseded by the later user
 amendment in `docs/PROJECT_SPEC.md`:** flowers grow during five accumulated valid
 watering seconds; reduced motion preserves that growth amount and skips only the
 post-completion card movement.
-Keep accepted room/camera/GLBs unchanged. No particles, post-processing or new
-dependency. Readable native card button mirrors canvas picking. A native modal
+At M4 implementation time, the accepted room, camera and GLBs were kept
+unchanged. **The later watering-can and planter appearance amendment in
+`docs/PROJECT_SPEC.md` supersedes that asset constraint for the watering set;
+it does not authorize unrelated room or camera changes.** No particles,
+post-processing or new dependency. Readable native card button mirrors canvas picking. A native modal
 dialog shows editable Vietnamese text, handles Escape/close and restores focus.
 At the time this plan was written, the sender had not yet supplied personal
 text. **Superseded by the 2026-10-20 user amendment in `docs/PROJECT_SPEC.md`:**
