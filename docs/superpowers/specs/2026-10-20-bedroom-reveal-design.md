@@ -1,6 +1,6 @@
 # Milestone 2 — Bedroom reveal
 
-**Status:** Draft for user review; product implementation has not started.
+**Status:** Approved by the user on 2026-10-20; implementation planning authorized.
 
 **Date:** 2026-10-20
 
@@ -12,7 +12,7 @@
 
 The user accepted the Milestone 1 exterior and asked to continue after its handoff was pushed. The next scope is Milestone 2 in `docs/PROJECT_SPEC.md`: reveal a cozy bedroom, establish the desk and plant as the next focus, and continue the visual story from the upstairs window.
 
-The existing specification supplies the product intent, palette, furniture list, camera continuity requirement, accessibility rules, and milestone boundaries. This addendum proposes the concrete interior composition, asset pipeline, transition, and failure behavior for that scope. The general Blender permission was previously approved for the house and tree only; using Blender for the bedroom is an extension proposed here.
+The existing specification supplies the product intent, palette, furniture list, camera continuity requirement, accessibility rules, and milestone boundaries. This approved addendum defines the concrete interior composition, asset pipeline, transition, and failure behavior for that scope. It extends the earlier house/tree Blender permission to the bedroom.
 
 The room should have the same modeled finish as the accepted exterior. Its furniture needs softened edges, layered silhouettes, quiet surface detail, and believable material differences. A room made from exposed primitive boxes is insufficient.
 
@@ -32,7 +32,7 @@ Watering input, water particles, the five-second timer, animated tulip growth, g
 | Use a curtain-covered handoff between matched exterior and interior views | Preserves the accepted exterior composition; the project spec explicitly permits a hidden eased handoff | Requires careful matching of window proportions, light, movement direction, and the fully covered switch |
 | Cut directly to an independent room shot | Simple integration | An exposed cut would interrupt the guided story and fail the continuity requirement |
 
-**Proposed choice:** the curtain-covered handoff. It must feel like entering the same room. Use an opaque, warm linen veil only during the concealed switch; no camera passage through visible solid geometry, black loading interstitial, or exposed camera teleport.
+**Approved choice:** the curtain-covered handoff. It must feel like entering the same room. Use an opaque, warm linen veil only during the concealed switch; no camera passage through visible solid geometry, black loading interstitial, or exposed camera teleport.
 
 ## Visual composition
 
@@ -98,7 +98,7 @@ Reserve space for the title/status and skip control. Recompute camera framing fr
 
 Author a new room asset in Blender using the established local authoring setup. Keep a separate source and export so M2 can be iterated without rebuilding the approved exterior.
 
-Proposed files:
+Asset files:
 
 - `assets/blender/create-bedroom.py` — reproducible room authoring/export script.
 - `assets/blender/bedroom.blend` — editable source.
@@ -113,7 +113,7 @@ Merge static repetitions by material where possible. Keep the pot, can, and curt
 
 Serve all geometry and textures locally, packed into the GLB. Do not introduce remote assets, downloaded models with unclear provenance, new runtime dependencies, texture compression extensions requiring a new external decoder, or a font CDN.
 
-Proposed room budget: no more than 60,000 triangles, 50 mesh primitives, and 6 MB for the packed asset. These are implementation limits for this proposed scope, not measured performance claims. Inspect the exported counts and render cost before accepting additional detail. Physical-phone smoothness cannot be inferred from these counts or a portrait desktop viewport.
+Approved room budget: no more than 60,000 triangles, 50 mesh primitives, and 6 MB for the packed asset. These are implementation limits, not measured performance claims. Inspect the exported counts and render cost before accepting additional detail. Physical-phone smoothness cannot be inferred from these counts or a portrait desktop viewport.
 
 ## Runtime responsibilities
 
@@ -170,9 +170,9 @@ Known baseline limitations are the desktop shader precision warning X4122, the J
 4. The final desktop and portrait frames show the complete pot and the recognizable watering can with free space above the plant. Window/room context remains visible.
 5. Normal motion completes once; skip, reduced motion, resize, retry, and teardown cannot start competing timelines or leave stale UI and scene state.
 6. A failed room asset leaves the accepted exterior usable with accurate status and a working room retry.
-7. New assets are local, editable, repeatably exportable, validated, and within the proposed room resource budget.
+7. New assets are local, editable, repeatably exportable, validated, and within the approved room resource budget.
 8. Source/build/render/behavior/review evidence is recorded for the actual implementation. No watering, bloom, card, personal copy, or deployment is included.
 
 ## Next gate
 
-User review of this written design precedes the implementation plan and product changes. Scope authorization to continue M2 has been received; approval of this proposed composition, Blender extension, and transition is pending.
+The user approved this written design with “Đồng ý thiết kế” on 2026-10-20. Its composition, Blender extension, transition, and scope are approved. The implementation plan must be reviewed and its execution method selected before product changes begin.
