@@ -1,4 +1,73 @@
-# Milestone 3 watering — current local handoff
+# Milestone 4 bloom and greeting — current local handoff
+
+The user requested immediate M4 implementation on 2026-10-20 under the existing
+PROJECT_SPEC. Local branch: `codex/bloom-card` at `D:\Z_PROJECT\20_10`.
+Reviewed/verified source: `6cf05c8f0883a0aa714a8caaa5ed18fa5c377d8b`.
+The later handoff documentation commit preserves that source. No remote action.
+
+## Delivered M4
+
+- Watering completion now hands off to five tulips: curved stems rise, buds
+  appear and six separately shaped petals per flower open in staggered order.
+  Normal presentation takes 4.4 seconds; reduced motion shows the finished
+  bouquet immediately. The small ivory paper card lifts and turns into view.
+- Click/tap the 3D card or activate **Mở thiệp** with pointer, Enter or Space.
+  The native modal has a labeled **Đóng thiệp** control and Escape dismissal,
+  contains focus, and restores it to the semantic card button.
+- Greeting text is in `src/content/gift-message.ts`. **It is a neutral default,
+  not a supplied personal message** (`personalized: false`). Replace its title,
+  salutation and paragraphs before final gifting. No identity/memory was invented.
+- Existing room, cameras, GLBs and five-second accumulated watering are preserved.
+  M3's completed panel/status intentionally yields to the bloom/card presentation;
+  its experience checks now inspect the retained terminal progress value.
+- Bloom time pauses while unavailable or hidden; resize does not replay it.
+  A live reduced-motion change finishes presentation without opening the dialog.
+  Teardown restores the seedling and disposes only owned effects/UI/resources.
+  No dependency, particle system, post-processing or additional RAF was added.
+
+## M4 evidence
+
+| Check | Result | Details |
+|---|---|---|
+| TypeScript / production build | PASS | Explicit typecheck and build; JS `index-vPlIKEv9.js`, 777.74 kB / 212.70 kB gzip |
+| Focused module checks | PASS | 3 tests, 12.464 s on final source |
+| M4 dev experience | PASS | 3 tests, 58.698 s before equivalent indexed-loop allocation cleanup |
+| M4 compiled experience | PASS | 3 tests, 47.245 s on final source, preview4176 |
+| M3 affected experience regressions | PASS | 5 tests, 40.642 s with documented handoff expectations |
+| M2 affected experience regressions | PASS | 7 tests, 136.356 s |
+| Actual graphics / dialog | PASS | Desktop1440x900 and portrait390x844; normal/reduced motion, growing/finished bouquet and readable dialog |
+| Unexpected JS errors / external requests | PASS | None in all four capture routes |
+| Warning-free console | FAIL | Existing desktop shader precision warning X4122 persists |
+| Physical-phone FPS / full-video review | NOT_RUN | No inference from headless captures |
+
+Earlier M3 regression attempt had one obsolete visible-progress lookup after the
+M4 panel handoff and one seven-second timeout while multiple software-rendered
+browser runs contended. The locator was corrected to inspect retained progress;
+the same unchanged timeout passes when rerun without concurrent renderers. No
+watering timer or acceptance threshold was weakened. Logs preserve both runs.
+
+Both independent read-only reviewers `/root/m4_review_a` and `/root/m4_review_b`
+checked the same clean frozen source, full diff/requirements and supplied captures:
+**no actionable findings**. Requested native settings `gpt-6-luna` / `high` were
+accepted; resolved settings are not exposed (unknown). Tests/build were NOT_RUN
+by reviewers. Read-only was instructed, not sandbox-enforced; shared-model blind
+spots remain possible. Root verification is recorded separately above.
+
+The normal/reduced capture set initially preceded only a for-of-to-indexed-loop
+cleanup: geometry, transforms, order, material and timing expressions are identical.
+Final compiled tests cover the cleaned-up code; final desktop/portrait captures
+also use that frozen build. User visual acceptance remains separate.
+
+Preview remains `http://127.0.0.1:4176/`; reload for M4 and water once to see it.
+Focused checks: dev `python tests/bloom_browser.py`; compiled
+`python tests/bloom_browser.py BloomExperienceChecks`, using the actual preview
+in `GARDEN_TEST_URL`. Existing M2/M3 commands below still apply. Packed GLBs are
+unchanged; their previous hashes/caps below remain applicable. Vite chunk warning
+persists. Local implementation does not grant merge/push/deployment approval.
+
+---
+
+# Historical Milestone 3 watering handoff
 
 The user approved the M3 design, written spec and concrete implementation plan,
 choosing sequential execution in this chat. The implementation is local on
