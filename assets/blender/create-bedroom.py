@@ -8,6 +8,8 @@ import sys
 from pathlib import Path
 import numpy as np
 from mathutils import Vector
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from bedroom_surfaces import surface, bake_static_occlusion
 
 ROOT = Path(__file__).resolve().parents[2]
 OUT = ROOT / 'public/models/bedroom.glb'
@@ -36,32 +38,7 @@ def parent_keep(o, parent):
 
 
 def mat(name, color, rough=.8, grain=None, emission=0):
-    m = bpy.data.materials.new(name)
-    m.use_nodes = True
-    m.diffuse_color = (*color, 1)
-    bsdf = m.node_tree.nodes.get('Principled BSDF')
-    bsdf.inputs['Base Color'].default_value = (*color, 1)
-    bsdf.inputs['Roughness'].default_value = rough
-    if emission:
-        bsdf.inputs['Emission Color'].default_value = (*color, 1)
-        bsdf.inputs['Emission Strength'].default_value = emission
-    if grain:
-        n = 256
-        yy, xx = np.mgrid[0:n, 0:n] / n
-        noise = np.random.default_rng(len(name)).random((n, n)) - .5
-        if grain == 'wood':
-            strength = .009 if name == 'Pale floor oak' else .015
-            variation = np.sin(xx*180 + np.sin(yy*15)*1.7)*strength + noise*.004
-        elif grain == 'fabric':
-            variation = (np.sin(xx*700) + np.sin(yy*700))*.009 + noise*.015
-        else: variation = noise*.013
-        rgba = np.ones((n, n, 4), dtype=np.float32)
-        rgba[:, :, :3] = np.clip(np.array(color) + variation[:, :, None], 0, 1)
-        im = bpy.data.images.new(name+' surface', width=n, height=n, alpha=False)
-        im.pixels.foreach_set(rgba.ravel()); im.pack()
-        tex = m.node_tree.nodes.new('ShaderNodeTexImage'); tex.image = im
-        m.node_tree.links.new(tex.outputs['Color'], bsdf.inputs['Base Color'])
-    return m
+    return surface(name, color, rough, grain, emission)
 
 
 ivory = mat('Warm limewash', (.83,.77,.66), grain='plaster')
@@ -78,7 +55,7 @@ ceramic = mat('Hand thrown clay', (.62,.29,.19), .64, 'plaster')
 soil = mat('Dark potting earth', (.13,.10,.065), 1, 'plaster')
 green = mat('Living leaf', (.25,.42,.23), .72)
 leaflight = mat('Young leaf', (.42,.56,.29), .75)
-canmat = mat('Sage enamel', (.46,.62,.50), .32)
+canmat = mat('Sage enamel', (.37,.50,.40), .32, 'enamel')
 dark = mat('Quiet shadow', (.18,.24,.17), .9)
 gold = mat('Lamp linen glow', (.96,.78,.43), .85, emission=.15)
 sky = mat('Window daylight', (.70,.83,.82), .98, emission=.35)
@@ -301,6 +278,7 @@ for parent in (shell,desk,pot,plant,can,cleft,cright):
         bpy.context.view_layer.objects.active=objects[0]; bpy.ops.object.join()
         bpy.context.object.name=parent.name+' / '+name
 
+bake_static_occlusion(bedroom)
 OUT.parent.mkdir(parents=True,exist_ok=True)
 bpy.ops.object.select_all(action='DESELECT')
 for o in [bedroom]+list(bedroom.children_recursive): o.select_set(True)

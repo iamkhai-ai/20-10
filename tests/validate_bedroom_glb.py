@@ -63,6 +63,13 @@ def validate(path):
     assert triangles <= 60_000, triangles
     assert primitives <= 50, primitives
     assert all('uri' not in x for x in doc.get('buffers', []) + doc.get('images', []))
+    # Focal surfaces must retain their relief, roughness and baked depth in GLB.
+    for material in doc['materials']:
+        if material.get('name') in ('Honey oak', 'Pale floor oak', 'Ivory cotton',
+                                    'Dusty rose quilt', 'Hand thrown clay', 'Sage enamel'):
+            assert material.get('normalTexture'), material['name'] + ': missing normal texture'
+            assert material.get('pbrMetallicRoughness', {}).get('metallicRoughnessTexture'), material['name'] + ': missing roughness'
+            assert material.get('occlusionTexture'), material['name'] + ': missing ambient occlusion'
     result = {'bytes': len(data), 'triangles': triangles, 'primitives': primitives,
               'materials': len(doc.get('materials', [])), 'images': len(doc.get('images', [])),
               'sha256': hashlib.sha256(data).hexdigest()}

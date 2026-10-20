@@ -36,6 +36,18 @@ Watering input, water particles, the five-second timer, animated tulip growth, g
 
 ## Visual composition
 
+### Visual review correction
+
+After the first M2 render, the user requested more detail and realism and
+selected “Gần đời thật, vẫn ấm áp” on 2026-10-20. For the M2 interior,
+favor believable cloth volume/folds, joinery, plant shapes, wood/ceramic/
+painted-metal surface response and daylight depth over toy-like shapes.
+The warm palette and cutaway story composition remain the setting. Refine
+the existing local Blender/PBR pipeline with normal/roughness maps and
+static baked contact occlusion; keep movable props from baking persistent
+contact shadows onto the desk. The existing asset caps, packed resources,
+motion/accessibility behavior, and M2 endpoint remain in force.
+
 ### Room view
 
 Use a compact dollhouse cutaway room with a warm ivory upper wall, muted sage lower paneling, slim painted skirting, and a pale oak floor. Remove the camera-facing wall from the composition rather than allowing the camera to enter a solid box. Keep the ceiling open in the cutaway view so it does not obscure the desk or darken the room.
