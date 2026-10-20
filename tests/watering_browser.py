@@ -94,6 +94,57 @@ class StateChecks(BrowserCase):
         self.assertEqual(r['elapsedMs'],1100)
 
 
+class ControlChecks(BrowserCase):
+    def setUp(self):
+        super().setUp();self.isolated()
+        self.page.evaluate("""async()=>{
+          document.body.innerHTML='<main id="ui"><h1>A Little Garden for You</h1><p id="status" role="status" tabindex="-1">Một chiếc bình tưới đang chờ cạnh chậu cây.</p></main><button id="outside">Outside</button>';
+          await import('/src/styles.css');
+          const {createWateringControls}=await import('/src/ui/watering-controls.ts');
+          window.toggles=0;window.pauses=0;
+          window.controls=createWateringControls({onToggle:()=>toggles++,onPause:()=>pauses++});
+          window.snap={phase:'ready',mode:'none',available:true,elapsedMs:0,progress:0,complete:false};
+          controls.setVisible(true);controls.render(snap);
+        }""")
+
+    def test_semantic_progress_and_keyboard_repeat(self):
+        btn=self.page.get_by_role('button',name='Tưới cây',exact=True)
+        expect(btn).to_have_attribute('aria-pressed','false')
+        self.assertGreaterEqual(btn.bounding_box()['height'],44)
+        btn.focus();btn.press('Enter');btn.press('Space')
+        btn.dispatch_event('keydown',{'key':'Enter','repeat':True})
+        btn.dispatch_event('click')
+        self.assertEqual(self.page.evaluate('toggles'),3)
+        self.page.get_by_role('button',name='Outside').focus()
+        self.assertGreaterEqual(self.page.evaluate('pauses'),1)
+        expect(self.page.get_by_role('progressbar')).to_have_attribute('max','5')
+
+    def test_active_pause_complete_and_focus_restoration(self):
+        self.page.evaluate("()=>{Object.assign(snap,{phase:'watering',mode:'button',elapsedMs:2200,progress:.44});controls.render(snap)}")
+        btn=self.page.get_by_role('button',name='Tạm dừng',exact=True)
+        expect(btn).to_have_attribute('aria-pressed','true');btn.focus()
+        self.assertEqual(self.page.get_by_role('progressbar').evaluate('(e)=>e.value'),2.2)
+        self.page.evaluate("()=>{Object.assign(snap,{phase:'complete',complete:true,mode:'none',elapsedMs:5000,progress:1});controls.render(snap)}")
+        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.')
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'status')
+        expect(self.page.locator('#watering-action')).to_be_disabled()
+        self.page.evaluate('()=>{controls.dispose();controls.dispose()}')
+        self.assertEqual(self.page.locator('#watering-panel').count(),0)
+
+    def test_repeated_render_is_quiet_and_hiding_preserves_focus(self):
+        r=self.page.evaluate("""async()=>{
+          let mutations=0;const observer=new MutationObserver(e=>mutations+=e.length);
+          observer.observe(document.querySelector('#status'),{childList:true});
+          for(let i=0;i<20;i++)controls.render(snap);
+          await Promise.resolve();observer.disconnect();return mutations;
+        }""")
+        self.assertEqual(r,0)
+        self.page.locator('#watering-action').focus()
+        self.page.evaluate('()=>controls.setVisible(false)')
+        expect(self.page.locator('#watering-panel')).to_be_hidden()
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'status')
+
+
 class ViewChecks(BrowserCase):
     def setUp(self):
         super().setUp();self.isolated()
