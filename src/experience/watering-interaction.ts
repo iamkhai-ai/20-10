@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import type { BedroomBuildResult } from '../scene/interior/build-bedroom';
 import { createWateringView } from '../scene/interior/build-watering';
-import { createWateringControls } from '../ui/watering-controls';
+import { createWateringControls, type WateringControls } from '../ui/watering-controls';
 import { createWateringState } from './watering-state';
 
 export interface WateringInteraction {
@@ -37,7 +37,8 @@ export function createWateringInteraction(options: {
     if (disposed) return;
     state.pause(performance.now()); release(); view.cancel(immediate); controls.render(state.snapshot());
   };
-  const controls = createWateringControls({
+  let controls: WateringControls;
+  try { controls = createWateringControls({
     onPause: () => stop(true),
     onToggle: () => {
       if (!canAct()) return;
@@ -46,7 +47,9 @@ export function createWateringInteraction(options: {
       const now = performance.now(); state.setAction('button', now);
       view.aimAutomatically(); state.setAim(view.isValidAim(), now); controls.render(state.snapshot());
     },
-  });
+  }); } catch (error) {
+    state.dispose(); view.dispose(); throw error;
+  }
   const ray = (event: PointerEvent) => {
     const rect = canvas.getBoundingClientRect();
     if (rect.width <= 0 || rect.height <= 0) return false;

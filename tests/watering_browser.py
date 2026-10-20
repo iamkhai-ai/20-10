@@ -2,6 +2,7 @@
 Module checks need Vite; WateringExperienceChecks also run on compiled preview.
 """
 import unittest
+import math
 from bedroom_browser import BrowserCase, BASE
 from playwright.sync_api import expect
 
@@ -94,6 +95,90 @@ class StateChecks(BrowserCase):
         self.assertEqual(r['elapsedMs'],1100)
 
 
+class WateringExperienceChecks(BrowserCase):
+    def ready(self, reduce=True):
+        if reduce:self.page.emulate_media(reduced_motion='reduce')
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible(timeout=20000)
+
+    def amount(self):
+        return self.page.get_by_role('progressbar').evaluate('(e)=>e.value')
+
+    def point(self, point):
+        w=self.page.viewport_size['width'];h=self.page.viewport_size['height'];a=w/h
+        eye=(2.15,2.35,2.75) if a<.85 else (2.75,2.45,3.15)
+        target=(1.4,1.55,-.9)
+        def norm(v):
+            length=math.sqrt(sum(x*x for x in v));return tuple(x/length for x in v)
+        f=norm(tuple(target[i]-eye[i] for i in range(3)));r=norm((-f[2],0,f[0]))
+        u=(r[1]*f[2]-r[2]*f[1],r[2]*f[0]-r[0]*f[2],r[0]*f[1]-r[1]*f[0])
+        d=tuple(point[i]-eye[i] for i in range(3));depth=sum(d[i]*f[i] for i in range(3))
+        scale=math.tan(math.radians(65 if a<.85 else 48)/2)
+        return ((1+sum(d[i]*r[i] for i in range(3))/(depth*scale*a))*w/2,
+                (1-sum(d[i]*u[i] for i in range(3))/(depth*scale))*h/2)
+
+    def test_normal_and_early_skip_only_enable_after_desk(self):
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_have_count(0)
+        self.page.get_by_role('button',name='Bỏ qua phần mở đầu').click()
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible(timeout=20000)
+        self.assertEqual(self.page.locator('#watering-panel').count(),1)
+        self.assertEqual(self.amount(),0);self.assertEqual(self.errors,[])
+
+    def test_keyboard_five_seconds_pause_and_resume(self):
+        self.ready()
+        button=self.page.get_by_role('button',name='Tưới cây',exact=True);button.focus();button.press('Enter')
+        self.page.wait_for_timeout(1200)
+        self.page.get_by_role('button',name='Tạm dừng',exact=True).press('Space')
+        saved=self.amount();self.assertGreater(saved,.8);self.assertLess(saved,3)
+        self.page.wait_for_timeout(400);self.assertEqual(saved,self.amount())
+        self.page.get_by_role('button',name='Tưới cây',exact=True).press('Enter')
+        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.',timeout=7000)
+        self.assertEqual(self.amount(),5);self.assertEqual(self.page.evaluate('document.activeElement.id'),'status')
+        self.assertEqual(self.errors,[])
+
+    def test_real_touch_drag_in_portrait(self):
+        self.page.set_viewport_size({'width':390,'height':844});self.ready()
+        cdp=self.context.new_cdp_session(self.page)
+        def touch(kind,xy=None):cdp.send('Input.dispatchTouchEvent',{'type':kind,'touchPoints':[] if xy is None else [{'x':xy[0],'y':xy[1],'id':0}]})
+        can=self.point((1.91,1.22,-.85));soil=self.point((1.1,1.405,-.88))
+        touch('touchStart',can);touch('touchMove',soil);self.page.wait_for_timeout(400)
+        self.assertGreater(self.amount(),.1)
+        touch('touchCancel');saved=self.amount();self.page.wait_for_timeout(180);self.assertEqual(saved,self.amount())
+        touch('touchStart',can);touch('touchMove',soil)
+        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.',timeout=7000)
+        touch('touchEnd');self.assertEqual(self.amount(),5);self.assertEqual(self.errors,[])
+
+    def test_resize_motion_visibility_and_teardown(self):
+        self.ready();self.page.get_by_role('button',name='Tưới cây',exact=True).click();self.page.wait_for_timeout(250)
+        self.page.set_viewport_size({'width':390,'height':844})
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible()
+        saved=self.amount();self.page.wait_for_timeout(180);self.assertEqual(saved,self.amount())
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click();self.page.emulate_media(reduced_motion='no-preference')
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible()
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.evaluate("window.dispatchEvent(new Event('blur'))")
+        saved=self.amount();self.page.wait_for_timeout(180);self.assertEqual(saved,self.amount())
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.evaluate("window.dispatchEvent(new Event('beforeunload'))")
+        self.assertEqual(self.page.locator('#watering-panel').count(),0)
+        self.assertEqual(self.page.locator('canvas').count(),0);self.assertEqual(self.errors,[])
+
+    def test_room_failure_retry_and_water_controls(self):
+        count=[0]
+        def route(r):
+            count[0]+=1
+            if count[0]==1:r.fulfill(status=404,body='missing')
+            else:r.continue_()
+        self.page.route('**/models/bedroom.glb',route)
+        self.page.emulate_media(reduced_motion='reduce');self.page.goto(BASE)
+        expect(self.page.get_by_role('button',name='Thử mở căn phòng lại')).to_be_visible(timeout=12000)
+        expect(self.page.locator('#watering-panel')).to_have_count(0)
+        self.page.get_by_role('button',name='Thử mở căn phòng lại').click()
+        expect(self.page.get_by_role('button',name='Tưới cây',exact=True)).to_be_visible(timeout=12000)
+        self.assertEqual(self.page.locator('#watering-panel').count(),1)
+
+
 class InteractionChecks(BrowserCase):
     def setUp(self):
         super().setUp();self.isolated()
@@ -101,6 +186,16 @@ class InteractionChecks(BrowserCase):
 
     def amount(self):
         return self.page.get_by_role('progressbar').evaluate('(e)=>e.value')
+
+    def test_setup_failure_removes_only_owned_effects(self):
+        r=self.page.evaluate("""async()=>{
+          probe.interaction.dispose();document.querySelector('#ui').remove();
+          const {createWateringInteraction}=await import('/src/experience/watering-interaction.ts');
+          let failed=false;try{createWateringInteraction({canvas:probe.runtime.renderer.domElement,
+            camera:probe.runtime.camera,bedroom:probe.bedroom,reducedMotion:true})}catch{failed=true}
+          return {failed,effects:!!probe.bedroom.group.getObjectByName('watering-effects'),can:!!probe.rig.can.parent};
+        }""")
+        self.assertTrue(r['failed']);self.assertFalse(r['effects']);self.assertTrue(r['can'])
 
     def test_button_pause_resume_and_complete_once(self):
         self.page.get_by_role('button',name='Tưới cây',exact=True).click()
@@ -247,6 +342,16 @@ class ViewChecks(BrowserCase):
           return {off:!probe.effects().visible,rest:q.every((v,i)=>v===rig.plant.quaternion.toArray()[i]),aim:view.isValidAim()};
         }""")
         self.assertTrue(r['off']);self.assertTrue(r['rest']);self.assertFalse(r['aim'])
+
+    def test_far_drag_stays_within_the_desktop_envelope(self):
+        r=self.page.evaluate("""()=>{
+          const {view,rig,THREE}=probe;view.beginDrag();
+          const origin=new THREE.Vector3(5,5,5);
+          const ray=new THREE.Ray(origin,new THREE.Vector3(-100,1.8,100).sub(origin).normalize());
+          view.drag(ray);return rig.can.position.toArray();
+        }""")
+        self.assertGreaterEqual(r[0],1.25);self.assertLessEqual(r[0],2)
+        self.assertGreaterEqual(r[2],-1.0);self.assertLessEqual(r[2],-.65)
 
 
 if __name__=='__main__':

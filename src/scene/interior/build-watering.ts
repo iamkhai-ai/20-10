@@ -100,8 +100,8 @@ export function createWateringView(rig: BedroomWateringRig,
       }
       stopTween(); snapping = false; effects.visible = false;
       if (ray.intersectPlane(plane, point)) {
-        point.x = THREE.MathUtils.clamp(point.x, 0.1, 2.4);
-        point.z = THREE.MathUtils.clamp(point.z, -1.45, 0.15);
+        point.x = THREE.MathUtils.clamp(point.x, 1.25, 2.0);
+        point.z = THREE.MathUtils.clamp(point.z, -1.0, -0.65);
         can.parent!.worldToLocal(point); can.position.copy(point); can.quaternion.copy(restQ);
       }
     },
