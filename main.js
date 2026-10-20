@@ -49,16 +49,48 @@ sun.shadow.camera.right = 12;
 sun.shadow.camera.top = 12;
 sun.shadow.camera.bottom = -12;
 
-const matWall = new THREE.MeshStandardMaterial({ color: 0xf5e6d3, roughness: 0.9 });
-const matRoof = new THREE.MeshStandardMaterial({ color: 0x8b3a3a, roughness: 0.8 });
+function makeTexture(draw, size = 256, repeat = [4, 4]) {
+  const c = document.createElement('canvas');
+  c.width = size; c.height = size;
+  draw(c.getContext('2d'), size);
+  const t = new THREE.CanvasTexture(c);
+  t.wrapS = t.wrapT = THREE.RepeatWrapping;
+  t.repeat.set(repeat[0], repeat[1]);
+  return t;
+}
+const brickTex = makeTexture((ctx, s) => {
+  ctx.fillStyle = '#8a5a3b'; ctx.fillRect(0, 0, s, s);
+  const bw = s / 4, bh = s / 8;
+  for (let y = 0; y < s; y += bh) {
+    const off = (Math.floor(y / bh) % 2) * (bw / 2);
+    for (let x = -bw; x < s + bw; x += bw) {
+      ctx.fillStyle = `rgb(${120 + Math.random() * 40},${70 + Math.random() * 30},${45 + Math.random() * 25})`;
+      ctx.fillRect(x + off + 2, y + 2, bw - 4, bh - 4);
+    }
+  }
+}, 256, [2, 2]);
+const woodTex = makeTexture((ctx, s) => {
+  ctx.fillStyle = '#8b6f47'; ctx.fillRect(0, 0, s, s);
+  for (let i = 0; i < 18; i++) {
+    ctx.strokeStyle = `rgba(60,40,20,${0.15 + Math.random() * 0.25})`;
+    ctx.lineWidth = 1 + Math.random() * 3;
+    ctx.beginPath();
+    const y = Math.random() * s;
+    ctx.moveTo(0, y);
+    ctx.bezierCurveTo(s * 0.3, y + Math.random() * 30 - 15, s * 0.7, y + Math.random() * 30 - 15, s, y + Math.random() * 20 - 10);
+    ctx.stroke();
+  }
+}, 256, [3, 3]);
+const matWall = new THREE.MeshStandardMaterial({ map: brickTex, roughness: 0.9, envMapIntensity: 0.6 });
+const matRoof = new THREE.MeshStandardMaterial({ color: 0x7a2f2f, roughness: 0.85, envMapIntensity: 0.5 });
 const matFrame = new THREE.MeshStandardMaterial({ color: 0x5c3a21, roughness: 0.7 });
-const matGlass = new THREE.MeshStandardMaterial({ color: 0xaed6f1, transparent: true, opacity: 0.35, roughness: 0.1 });
-const matFloor = new THREE.MeshStandardMaterial({ color: 0x6b4f3a, roughness: 0.95 });
-const matTable = new THREE.MeshStandardMaterial({ color: 0xc9a27a, roughness: 0.8 });
-const matPot = new THREE.MeshStandardMaterial({ color: 0xb5651d, roughness: 0.9 });
+const matGlass = new THREE.MeshPhysicalMaterial({ color: 0xaed6f1, transmission: 0.9, roughness: 0.05, thickness: 0.1, transparent: true, envMapIntensity: 1 });
+const matFloor = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.85, envMapIntensity: 0.5 });
+const matTable = new THREE.MeshStandardMaterial({ map: woodTex, roughness: 0.75, envMapIntensity: 0.6 });
+const matPot = new THREE.MeshStandardMaterial({ color: 0xb5651d, roughness: 0.85, envMapIntensity: 0.4 });
 const matSoil = new THREE.MeshStandardMaterial({ color: 0x3e2723, roughness: 1 });
 const matSeed = new THREE.MeshStandardMaterial({ color: 0x6d4c41, roughness: 0.9 });
-const matCan = new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.5, metalness: 0.3 });
+const matCan = new THREE.MeshStandardMaterial({ color: 0x4a90d9, roughness: 0.4, metalness: 0.35, envMapIntensity: 1 });
 const matWater = new THREE.MeshStandardMaterial({ color: 0x4fc3f7, transparent: true, opacity: 0.75 });
 const matGreen = new THREE.MeshStandardMaterial({ color: 0x4caf50, roughness: 0.8 });
 const matPetal = new THREE.MeshStandardMaterial({ color: 0xff6b9d, roughness: 0.6 });
@@ -183,6 +215,9 @@ card.position.set(0, 1.85, -0.2);
 card.visible = false;
 interior.add(card);
 
+const interiorLight = new THREE.PointLight(0xffd6a5, 1.2, 8);
+interiorLight.position.set(0, 2.2, 0);
+interior.add(interiorLight);
 scene.add(interior);
 
 const raycaster = new THREE.Raycaster();
