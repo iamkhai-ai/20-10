@@ -339,6 +339,8 @@ The complete gift should start directly in the browser with no setup screen, acc
 - Final personal greeting copy, audio, analytics, authentication, or backend services.
 - Publishing or deploying the site.
 
-## Open decision before Milestone 3
+## Milestone 3 watering-time decision
 
-Decide whether a pause in watering preserves accumulated active time or resets the five-second timer. This does not block the exterior milestone.
+Resolved by the user on 2026-10-20: **preserve accumulated valid watering time when input stops or the can moves away from the pot**. Resume from that amount until five valid seconds have accumulated; do not reset progress on a pause. Reloading the page starts a fresh experience.
+
+The user approved the proposed M3 interaction flow. The detailed [watering design](superpowers/specs/2026-10-20-watering-interaction-design.md) is awaiting written-spec review before implementation planning.

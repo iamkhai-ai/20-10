@@ -71,7 +71,11 @@ User visual acceptance remains separate from these technical results.
 
 Preview: `http://127.0.0.1:4176/`. Refresh after a new local build.
 Use the existing commands below for rebuilding and regression checks.
-The M3 pause-versus-reset watering-time decision is still open.
+The user subsequently requested M3 and selected preservation of accumulated
+valid watering time on pause. The in-chat interaction flow is approved;
+the detailed design at
+`docs/superpowers/specs/2026-10-20-watering-interaction-design.md` awaits
+written-spec review before implementation planning. M3 code has not begun.
 
 ---
 # Historical Milestone 2 initial handoff
