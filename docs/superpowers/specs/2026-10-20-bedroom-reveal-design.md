@@ -57,6 +57,11 @@ Reduce wall mottling and broad baked darkening. The new interior palette
 replaces the earlier terracotta-pot/ivory-wall shorthand for this revision.
 The user also rejected the rose quilt color; use milk-cream bedding with
 the sage throw. Keep the planter glaze smooth, with restrained relief.
+The user then requested a new watering-can design. Use a compact oval
+pastel-blue enamel body, one slender swept handle, a fine long spout and
+small brass rim/rose details. Keep the pot/can silhouettes separate.
+The desk finish remains pale oak as specified below: use a lighter,
+less red honey/blond finish for the furniture wood.
 
 ### Room view
 
@@ -76,7 +81,7 @@ Use a pale oak desktop with beveled edges, visible thickness, slim drawer fronts
 
 Place the rounded butter-yellow glazed pot in the brightest, least cluttered part of the surface. Include a cream rim and saucer, small rose flower motifs, wall thickness, dark soil, and a modest leafy seedling. The plant is a resting pre-bloom state: no tulips or greeting card appear yet.
 
-Place a rounded sage watering can to the pot's right, separated enough that both silhouettes are visible. Include a curved handle, short angled spout, open filling rim, and soft satin highlights. Its spout should suggest its purpose without appearing to pour water. The can and pot need separate scene nodes for M3 to animate them later.
+Place a compact oval pastel-blue watering can to the pot's right, separated enough that both silhouettes are visible. Include one slender swept handle, a fine long angled spout, an open filling rim, restrained brass details and soft satin highlights. Its spout should suggest its purpose without appearing to pour water. The can and pot need separate scene nodes for M3 to animate them later.
 
 Reserve empty space above and around the pot for the eventual flower-and-card composition. Do not build those future objects now.
 

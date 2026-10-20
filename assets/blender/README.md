@@ -1,4 +1,4 @@
-# Exterior asset source
+# Blender asset sources
 
 ## Milestone 2 bedroom source
 
@@ -33,18 +33,21 @@ a separate scene group during the concealed handoff; no exterior offset
 is applied to it.
 
 The current visual revision uses sewn cushions, naturally draped milk-cream bedding,
-staggered oak boards, tapered desk legs, shaped leaves and a tapered can
-spout with a perforated brass rose. The rounded planter has butter-yellow
+staggered oak boards, tapered pale-oak desk legs and shaped leaves.
+The compact pastel-blue can has an oval body, one slender swept handle,
+a fine long spout, a rolled brass filling rim and a small perforated rose.
+The rounded planter has butter-yellow
 glaze, a cream rim/saucer and small painted rose flowers. Upper walls are
 clean mist blue, paneling light sage and floorboards neutral blond oak,
 following the user's latest color feedback. Material names such as
-`Hand thrown clay`, `Dusty rose quilt` and `Warm limewash` remain stable for validation even
+`Hand thrown clay`, `Dusty rose quilt`, `Sage enamel` and `Warm limewash`
+remain stable for validation even
 though their palette changed. Three.js owns the window-directed sunlight;
 baked occlusion is attenuated for a clean wall finish.
 
-The room export has 45,273 triangles, 37 primitives, 24 materials and
-26 embedded images (4,890,040 bytes). Final GLB SHA-256:
-`fb52c2c96bb364442b465ff6ff55c9e01329cf9cbfa40bd5fdc0dec103070e56`.
+The room export has 45,449 triangles, 37 primitives, 24 materials and
+26 embedded images (4,871,584 bytes). Final GLB SHA-256:
+`d3050738274f5062507f7869ce90f8d4c5cfef1969d9bd5ea001f9d4770f0268`.
 Validate actual packed resource,
 hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
 The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.
