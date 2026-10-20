@@ -53,6 +53,19 @@ hierarchy and size limits with `python tests/validate_bedroom_glb.py`.
 The approved limits are 60,000 triangles, 50 primitives and 6,000,000 bytes.
 The can is a prop at M2; watering is not implemented by the asset.
 
+### M3 runtime calibration
+
+Watering uses the unchanged accepted GLB. `build-bedroom.ts` attaches a
+runtime outlet near room `(1.407, 1.525, -0.85)` to `watering_can`, with
+rest direction `(-0.55, 0.835, 0)` transformed into can-local coordinates.
+The soil target is `(1.10, 1.405, -0.88)` under `plant_pot`, inner radius
+0.14. `build-watering.ts` rotates the can 90 degrees and places the outlet
+0.24 above its soil intersection, offset `(0.065, 0, 0.045)` beside the
+stem. Final validity uses current transformed outlet direction and soil
+intersection, not screen coordinates. Update this calibration and its
+tests if reauthoring the can or planter. Owned water effects are runtime
+geometry; the packed GLB and its resource caps remain unchanged.
+
 ## Milestone 1 exterior source
 
 The house, window and framing tree are original Blender-authored assets for Milestone 1. The garden, path, flowers, camera and interface remain in Three.js.

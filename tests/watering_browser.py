@@ -94,5 +94,50 @@ class StateChecks(BrowserCase):
         self.assertEqual(r['elapsedMs'],1100)
 
 
+class ViewChecks(BrowserCase):
+    def setUp(self):
+        super().setUp();self.isolated()
+        self.page.evaluate("""async () => {
+          window.probe=await (await import('/tests/watering-view-harness.ts')).createViewProbe();
+        }""")
+
+    def test_calibration_validity_and_exact_restore(self):
+        r=self.page.evaluate("""() => {
+          const {view,rig}=probe;const rest=rig.can.position.toArray();
+          const restQ=rig.can.quaternion.toArray();const invalid=view.isValidAim();
+          view.aimAutomatically();view.render(100,true,.4);
+          const valid=view.isValidAim(),out=rig.outlet.getWorldPosition(new probe.THREE.Vector3()).toArray();
+          const emitting=probe.effects().visible;
+          rig.can.position.x+=1;const outside=view.isValidAim();rig.can.position.x-=1;
+          rig.can.position.y-=2;const below=view.isValidAim();
+          view.cancel(true);return {invalid,valid,out,emitting,outside,below,
+            restored:rest.every((v,i)=>v===rig.can.position.toArray()[i])&&restQ.every((v,i)=>v===rig.can.quaternion.toArray()[i]),off:!probe.effects().visible};
+        }""")
+        self.assertFalse(r['invalid']);self.assertTrue(r['valid']);self.assertTrue(r['emitting'])
+        self.assertGreater(r['out'][1],1.405)
+        self.assertFalse(r['outside']);self.assertFalse(r['below']);self.assertTrue(r['restored']);self.assertTrue(r['off'])
+
+    def test_wrong_direction_and_bounded_owned_resources(self):
+        r=self.page.evaluate("""() => {
+          const {view,rig,THREE}=probe;view.aimAutomatically();
+          rig.can.quaternion.identity();const upward=view.isValidAim();
+          view.cancel(true);view.aimAutomatically();view.beginDrag();view.cancel(true);
+          const effects=probe.effects();const drop=effects.getObjectByName('watering-drops');
+          let disposed=0;rig.can.traverse(o=>{if(o.isMesh)o.geometry.addEventListener('dispose',()=>disposed++)});
+          view.dispose();view.dispose();return {upward,drops:drop.count,disposed,removed:!effects.parent};
+        }""")
+        self.assertFalse(r['upward']);self.assertLessEqual(r['drops'],24)
+        self.assertEqual(r['disposed'],0);self.assertTrue(r['removed'])
+
+    def test_live_motion_cancels_and_no_feedback_when_paused(self):
+        r=self.page.evaluate("""() => {
+          const {view,rig}=probe;const q=rig.plant.quaternion.toArray();
+          view.setReducedMotion(false);view.aimAutomatically();probe.finish();view.render(500,true,.5);
+          view.setReducedMotion(true);view.render(700,false,.5);
+          return {off:!probe.effects().visible,rest:q.every((v,i)=>v===rig.plant.quaternion.toArray()[i]),aim:view.isValidAim()};
+        }""")
+        self.assertTrue(r['off']);self.assertTrue(r['rest']);self.assertFalse(r['aim'])
+
+
 if __name__=='__main__':
     unittest.main(verbosity=2)

@@ -6,6 +6,18 @@ export interface BedroomBuildResult {
   group: THREE.Group;
   swayTargets: THREE.Object3D[];
   cameraPoses(aspect: number): BedroomPoses;
+  watering: BedroomWateringRig;
+}
+
+export interface BedroomWateringRig {
+  room: THREE.Group;
+  can: THREE.Object3D;
+  pot: THREE.Object3D;
+  plant: THREE.Object3D;
+  outlet: THREE.Object3D;
+  soilTarget: THREE.Object3D;
+  outletDirection: THREE.Vector3;
+  soilRadius: number;
 }
 
 export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
@@ -47,6 +59,17 @@ export function buildBedroom(model: ImportedBedroom): BedroomBuildResult {
     room: pose([3.0, 4.0, 9.0], roomTarget),
     desk: pose([2.15, 2.35, 2.75], deskTarget),
   };
-  return { group, swayTargets: [model.nodes.curtain_left, model.nodes.curtain_right],
+  const can = model.nodes.watering_can;
+  const outlet = new THREE.Object3D(); outlet.name = 'watering-outlet';
+  outlet.position.copy(can.worldToLocal(new THREE.Vector3(1.407, 1.525, -0.85)));
+  can.add(outlet);
+  const soilTarget = new THREE.Object3D(); soilTarget.name = 'watering-soil';
+  soilTarget.position.copy(model.nodes.plant_pot.worldToLocal(new THREE.Vector3(1.10, 1.405, -0.88)));
+  model.nodes.plant_pot.add(soilTarget);
+  const inverse = new THREE.Matrix4().copy(can.matrixWorld).invert();
+  const watering: BedroomWateringRig = { room: group, can, pot: model.nodes.plant_pot,
+    plant: model.nodes.plant_rest, outlet, soilTarget, soilRadius: 0.14,
+    outletDirection: new THREE.Vector3(-0.55, 0.835, 0).normalize().transformDirection(inverse) };
+  return { group, watering, swayTargets: [model.nodes.curtain_left, model.nodes.curtain_right],
     cameraPoses: (aspect) => aspect < 0.85 ? portrait : landscape };
 }
