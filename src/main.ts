@@ -1,8 +1,7 @@
 import './styles.css';
 import * as THREE from 'three';
 import { createScene, type SceneRuntime } from './scene/create-scene';
-import { createExteriorMaterials } from './scene/exterior/materials';
-import { buildHouse } from './scene/exterior/build-house';
+import { buildExterior } from './scene/exterior/build-exterior';
 
 const host = document.querySelector<HTMLElement>('#scene-root');
 const status = document.querySelector<HTMLElement>('#status');
@@ -27,9 +26,12 @@ try {
 }
 
 if (runtime) {
-  const materials = createExteriorMaterials();
-  const house = buildHouse(materials);
-  runtime.scene.add(house.group);
+  const exterior = buildExterior();
+  runtime.scene.add(exterior.group);
+
+  const poses = exterior.cameraPoses(window.innerWidth / Math.max(1, window.innerHeight));
+  runtime.camera.position.copy(poses.intro.position);
+  runtime.camera.lookAt(poses.intro.target);
 
   const render = () => {
     if (disposed || !runtime) return;
