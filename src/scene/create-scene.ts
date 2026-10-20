@@ -5,6 +5,7 @@ export interface SceneRuntime {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
+  setLocation(location: 'exterior' | 'bedroom'): void;
   resize(): void;
   dispose(): void;
 }
@@ -50,6 +51,25 @@ export function createScene(host: HTMLElement): SceneRuntime {
   const fill = new THREE.DirectionalLight(0xe4edf0, 0.35);
   fill.position.set(-6, 5, 8);
   scene.add(fill);
+  scene.add(key.target);
+  const roomBackground = new THREE.Color(0xeee4d5);
+  const exteriorFog = scene.fog;
+  const setLocation = (location: 'exterior' | 'bedroom') => {
+    const interior = location === 'bedroom';
+    scene.background = interior ? roomBackground : sky;
+    scene.fog = interior ? null : exteriorFog;
+    scene.environmentIntensity = interior ? 0.8 : 0.7;
+    ambient.intensity = interior ? 0.9 : 0.75;
+    fill.intensity = interior ? 0.65 : 0.35;
+    key.intensity = interior ? 2.0 : 2.1;
+    key.position.set(interior ? 3.8 : 8, interior ? 7 : 12, interior ? 1.5 : 6);
+    key.target.position.set(0, interior ? 1 : 0, 0);
+    const extent = interior ? 5 : 10;
+    Object.assign(key.shadow.camera, { left: -extent, right: extent, top: extent, bottom: -extent,
+      far: interior ? 25 : 40 });
+    key.shadow.camera.updateProjectionMatrix();
+    key.shadow.needsUpdate = true;
+  };
 
   const resize = () => {
     const width = Math.max(1, host.clientWidth);
@@ -64,6 +84,7 @@ export function createScene(host: HTMLElement): SceneRuntime {
   const dispose = () => {
     sky.dispose();
     environment.dispose();
+    key.shadow.dispose();
     disposeObjectResources([scene]);
     renderer.dispose();
     if (renderer.domElement.parentNode === host) {
@@ -71,7 +92,7 @@ export function createScene(host: HTMLElement): SceneRuntime {
     }
   };
 
-  return { scene, camera, renderer, resize, dispose };
+  return { scene, camera, renderer, setLocation, resize, dispose };
 }
 
 function createSkyTexture(): THREE.CanvasTexture {

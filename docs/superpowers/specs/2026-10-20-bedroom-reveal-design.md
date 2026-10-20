@@ -175,4 +175,4 @@ Known baseline limitations are the desktop shader precision warning X4122, the J
 
 ## Next gate
 
-The user approved this written design with “Đồng ý thiết kế” on 2026-10-20. Its composition, Blender extension, transition, and scope are approved. The implementation plan must be reviewed and its execution method selected before product changes begin.
+The user approved this written design with “Đồng ý thiết kế”, then approved the implementation plan and sequential execution with “duyệt kế hoạch. Bắt đầu đi” on 2026-10-20. Its composition, Blender extension, transition, scope, and implementation are authorized. Completion still requires the implementation's verification and independent reviews; these approvals do not authorize later milestones or deployment.

@@ -186,4 +186,4 @@ Exercise skip both before exterior selection and during room delay. Delay parsin
 
 Alternative: sequential subagent implementation using `superpowers:subagent-driven-development`, with every delegate restricted to `gpt-6-luna` at `high` or `xhigh` and task reviews plus the two final independent reviews. Availability failures remain blockers; no provider/model fallback is allowed.
 
-The user approved the written M2 design. Review of this implementation plan and selection of its execution method are pending; product implementation has not begun.
+The user approved the written M2 design and this implementation plan, selecting the recommended sequential root execution by replying “duyệt kế hoạch. Bắt đầu đi” on 2026-10-20. Execute all tasks without further task-by-task approval prompts. Later milestones, merge, and deployment remain separate scopes.

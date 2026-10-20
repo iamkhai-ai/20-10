@@ -1,11 +1,14 @@
 import './styles.css';
 import gsap from 'gsap';
+import type * as THREE from 'three';
 import { createScene, type SceneRuntime } from './scene/create-scene';
 import { buildExterior } from './scene/exterior/build-exterior';
+import { buildBedroom, type BedroomBuildResult } from './scene/interior/build-bedroom';
 import { loadExteriorModel } from './scene/assets/load-exterior-model';
+import { loadBedroomModel, type ImportedBedroom } from './scene/assets/load-bedroom-model';
 import { disposeObjectResources } from './scene/dispose-object-resources';
-import { createCameraStory, type CameraStoryHandle } from './experience/camera-story';
-import { createIntroControls } from './ui/intro-controls';
+import { createCameraStory, type CameraStoryHandle, type StoryPhase } from './experience/camera-story';
+import { createIntroControls, storyCopy } from './ui/intro-controls';
 
 const host = document.querySelector<HTMLElement>('#scene-root');
 const status = document.querySelector<HTMLElement>('#status');
@@ -18,11 +21,9 @@ try {
   status.textContent = 'Trình duyệt không thể khởi động WebGL. Hãy thử Chrome hoặc Safari mới nhất.';
   console.error(error);
 }
-
 if (runtime) {
-  try {
-    startExperience(runtime, host);
-  } catch (error) {
+  try { startExperience(runtime, host); }
+  catch (error) {
     runtime.dispose();
     status.textContent = 'Khu vườn chưa thể mở. Bạn thử tải lại trang nhé.';
     console.error(error);
@@ -30,95 +31,159 @@ if (runtime) {
 }
 
 function startExperience(runtime: SceneRuntime, host: HTMLElement): void {
-  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   const exterior = buildExterior();
   exterior.group.visible = false;
   runtime.scene.add(exterior.group);
-
+  let room: BedroomBuildResult | null = null;
+  let roomState: 'pending' | 'ready' | 'unavailable' = 'pending';
   let story: CameraStoryHandle | null = null;
+  let location: 'exterior' | 'bedroom' = 'exterior';
   let skipRequested = false;
   let disposed = false;
   let frameId = 0;
+  let serial = 0;
+  let attempt: { id: number; controller: AbortController; deadline: number } | null = null;
+  const exteriorController = new AbortController();
   const swayTweens: gsap.core.Tween[] = [];
-  const controller = new AbortController();
+  const restRotations = new Map<THREE.Object3D, number>();
   const controls = createIntroControls(() => {
     if (story) story.skip();
-    else {
-      skipRequested = true;
-      controls.setStatus('Khu vườn sẵn sàng là mình đến cửa sổ nhé…');
-    }
-  });
-  controls.setStatus('Đang chuẩn bị khu vườn…');
-  const onResize = () => {
-    runtime.resize();
-    story?.reframe();
-  };
-  const resizeObserver = new ResizeObserver(onResize);
-  resizeObserver.observe(host);
-  window.addEventListener('resize', onResize);
+    else { skipRequested = true; controls.setStatus(storyCopy.queuedSkip); }
+  }, () => { if (roomState === 'unavailable') void loadRoom(); });
+  controls.setStatus(storyCopy.loading);
 
+  const displayPhase = (next: StoryPhase) => {
+    const waitingRetry = next === 'bedroom-unavailable' && attempt !== null;
+    controls.setStatus(waitingRetry ? storyCopy.retrying : storyCopy.phases[next]);
+    controls.setSettled(next === 'desk-settled' || (next === 'bedroom-unavailable' && !waitingRetry));
+    controls.setRetryVisible(next === 'bedroom-unavailable' && roomState === 'unavailable' && !attempt);
+  };
+  const updateSway = () => {
+    for (const tween of swayTweens) tween.kill();
+    swayTweens.length = 0;
+    for (const [target, rotation] of restRotations) target.rotation.z = rotation;
+    if (motion.matches || disposed) return;
+    const targets = location === 'bedroom' ? room?.swayTargets ?? [] : exterior.swayTargets;
+    for (const target of targets) {
+      if (!restRotations.has(target)) restRotations.set(target, target.rotation.z);
+      swayTweens.push(gsap.to(target.rotation, {
+        z: restRotations.get(target)! + (location === 'bedroom' ? 0.012 : 0.025),
+        duration: 3.6, ease: 'sine.inOut', yoyo: true, repeat: -1,
+      }));
+    }
+  };
+  const activate = (next: 'exterior' | 'bedroom') => {
+    if (next === 'bedroom' && !room) throw new Error('Bedroom is not ready.');
+    location = next;
+    exterior.group.visible = next === 'exterior';
+    if (room) room.group.visible = next === 'bedroom';
+    runtime.setLocation(next);
+    updateSway();
+  };
+  const syncRoomToStory = () => {
+    if (roomState === 'ready' && room) story?.setBedroom(room.cameraPoses);
+    else if (roomState === 'unavailable') story?.setBedroomUnavailable();
+  };
+  const onResize = () => { runtime.resize(); story?.reframe(); };
+  const onMotion = () => { story?.setReducedMotion(motion.matches); updateSway(); };
+  const observer = new ResizeObserver(onResize);
+  observer.observe(host);
+  window.addEventListener('resize', onResize);
+  motion.addEventListener('change', onMotion);
   const render = () => {
     if (disposed) return;
     runtime.renderer.render(runtime.scene, runtime.camera);
     frameId = window.requestAnimationFrame(render);
   };
   frameId = window.requestAnimationFrame(render);
-
-  const deadline = window.setTimeout(() => {
-    controller.abort(new DOMException('Exterior load deadline exceeded.', 'TimeoutError'));
-  }, 12_000);
+  const exteriorDeadline = window.setTimeout(() => exteriorController.abort(
+    new DOMException('Exterior load deadline exceeded.', 'TimeoutError')), 12_000);
 
   const dispose = () => {
     if (disposed) return;
     disposed = true;
-    window.clearTimeout(deadline);
-    controller.abort();
+    serial++;
+    window.clearTimeout(exteriorDeadline);
+    exteriorController.abort();
+    if (attempt) { window.clearTimeout(attempt.deadline); attempt.controller.abort(); attempt = null; }
     window.cancelAnimationFrame(frameId);
     window.removeEventListener('resize', onResize);
-    resizeObserver.disconnect();
+    window.removeEventListener('beforeunload', dispose);
+    motion.removeEventListener('change', onMotion);
+    observer.disconnect();
     for (const tween of swayTweens) tween.kill();
+    restRotations.clear();
     story?.dispose();
     controls.dispose();
     runtime.dispose();
   };
   window.addEventListener('beforeunload', dispose, { once: true });
 
+  async function loadRoom(): Promise<void> {
+    if (disposed || attempt) return;
+    if (room) {
+      for (const target of room.swayTargets) restRotations.delete(target);
+      runtime.scene.remove(room.group);
+      disposeObjectResources([room.group], [runtime.scene]);
+      room = null;
+    }
+    roomState = 'pending';
+    controls.setRetryVisible(false);
+    if (story) { controls.setStatus(storyCopy.retrying); controls.setSettled(false); }
+    const controller = new AbortController();
+    const current = { id: ++serial, controller, deadline: window.setTimeout(() => controller.abort(
+      new DOMException('Bedroom load deadline exceeded.', 'TimeoutError')), 12_000) };
+    attempt = current;
+    let parsed: ImportedBedroom | null = null;
+    try {
+      parsed = await loadBedroomModel('/models/bedroom.glb', controller.signal);
+      if (disposed || serial !== current.id) { disposeObjectResources([parsed.group]); return; }
+      const built = buildBedroom(parsed);
+      runtime.scene.add(built.group);
+      room = built;
+      parsed = null; // Scene teardown owns the attached model now.
+      roomState = 'ready';
+    } catch (error) {
+      if (parsed) disposeObjectResources([parsed.group], [runtime.scene]);
+      if (disposed || serial !== current.id) return;
+      roomState = 'unavailable';
+      console.warn('Bedroom is unavailable; keeping the garden.', error);
+    } finally {
+      window.clearTimeout(current.deadline);
+      if (attempt === current) attempt = null;
+    }
+    if (disposed || serial !== current.id) return;
+    syncRoomToStory();
+  }
+
+  // Both selections start independently; a slow room never blocks the exterior.
+  void loadRoom();
   void (async () => {
     try {
-      const model = await loadExteriorModel('/models/exterior-house-tree.glb', controller.signal);
-      if (disposed) {
-        disposeObjectResources([model.group]);
-        return;
-      }
-      try {
-        exterior.replaceArchitecture(model);
-      } catch (error) {
-        disposeObjectResources([model.group], [runtime.scene]);
-        throw error;
-      }
+      const model = await loadExteriorModel('/models/exterior-house-tree.glb', exteriorController.signal);
+      if (disposed) { disposeObjectResources([model.group]); return; }
+      try { exterior.replaceArchitecture(model); }
+      catch (error) { disposeObjectResources([model.group], [runtime.scene]); throw error; }
     } catch (error) {
       if (disposed) return;
       console.warn('Using the garden exterior fallback.', error);
-    } finally {
-      window.clearTimeout(deadline);
-    }
+    } finally { window.clearTimeout(exteriorDeadline); }
     if (disposed) return;
     exterior.group.visible = true;
-    controls.setStatus('Đang đến cửa sổ trên lầu…');
     story = createCameraStory(runtime.camera, exterior.cameraPoses, {
-      reducedMotion: reducedMotion || skipRequested,
-      onArrive: () => controls.setStatus('Đã đến cửa sổ trên lầu.'),
+      reducedMotion: motion.matches,
+      onPhase: displayPhase,
+      onLocation: activate,
+      onVeil: controls.setVeil,
+      onError: (error) => {
+        roomState = 'unavailable';
+        console.warn('Bedroom reveal was interrupted.', error);
+        displayPhase('bedroom-unavailable');
+      },
     });
-    if (!reducedMotion) {
-      for (const target of exterior.swayTargets) {
-        swayTweens.push(gsap.to(target.rotation, {
-          z: target.rotation.z + 0.025,
-          duration: 3.6,
-          ease: 'sine.inOut',
-          yoyo: true,
-          repeat: -1,
-        }));
-      }
-    }
+    syncRoomToStory();
+    if (skipRequested) story.skip();
+    updateSway();
   })();
 }

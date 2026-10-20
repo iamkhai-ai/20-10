@@ -7,7 +7,7 @@ import os
 from pathlib import Path
 import struct
 import unittest
-from playwright.sync_api import sync_playwright
+from playwright.sync_api import sync_playwright, expect
 
 BASE = os.environ.get('GARDEN_TEST_URL', 'http://127.0.0.1:5175').rstrip('/')
 ROOT = Path(__file__).resolve().parents[1]
@@ -210,6 +210,131 @@ class StoryChecks(BrowserCase):
         self.assertEqual(result['phase'],'bedroom-unavailable')
         self.assertEqual(result['veil'],0)
         self.assertIn('Switch failed',result['error'])
+
+
+FINAL_STATUS = 'Một chiếc bình tưới đang chờ cạnh chậu cây.'
+FAILED_STATUS = 'Căn phòng chưa mở được. Mình thử lại nhé.'
+
+
+class ExperienceChecks(BrowserCase):
+    def settled(self):
+        expect(self.page.get_by_role('status')).to_have_text(FINAL_STATUS,timeout=25_000)
+        expect(self.page.locator('#transition-veil')).to_have_css('opacity','0')
+        expect(self.page.locator('#transition-veil')).to_have_css('pointer-events','none')
+        self.assertEqual(self.errors,[])
+
+    def test_normal_progression(self):
+        external=[]
+        self.page.on('request',lambda r:external.append(r.url) if not r.url.startswith(BASE) and not r.url.startswith(('data:','blob:')) else None)
+        self.page.goto(BASE)
+        self.settled()
+        self.assertEqual(external,[])
+
+    def test_early_repeated_skip(self):
+        self.page.add_init_script('''const original=window.fetch;
+          window.fetch=async function(url,options){
+            if(String(url).includes('/models/'))await new Promise(r=>setTimeout(r,1000));
+            return original.call(this,url,options);
+          };''')
+        self.page.goto(BASE)
+        skip=self.page.get_by_role('button',name='Bỏ qua phần mở đầu')
+        skip.focus();skip.press('Enter');skip.dispatch_event('click')
+        self.settled()
+        self.assertEqual(self.page.evaluate('document.activeElement.id'),'status')
+
+    def test_room_failures_and_retry(self):
+        self.page.emulate_media(reduced_motion='reduce')
+        count=[0]
+        def route(r):
+            count[0]+=1
+            if count[0]==1:r.fulfill(status=404,body='missing')
+            else:r.continue_()
+        self.page.route('**/models/bedroom.glb',route)
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('status')).to_have_text(FAILED_STATUS,timeout=8_000)
+        retry=self.page.get_by_role('button',name='Thử mở căn phòng lại')
+        expect(retry).to_be_visible();retry.focus();retry.press('Enter')
+        self.settled();self.assertEqual(count[0],2)
+        self.page.unroute('**/models/bedroom.glb')
+        for data in (b'invalid glb',room_fixture(lambda d:next(n for n in d['nodes'] if n.get('name')=='pot_target').update(name='missing'))):
+            self.page.route('**/models/bedroom.glb',lambda r,request,payload=data:r.fulfill(body=payload,content_type='model/gltf-binary'))
+            self.page.reload()
+            expect(self.page.get_by_role('status')).to_have_text(FAILED_STATUS,timeout=8_000)
+            expect(self.page.get_by_role('button',name='Thử mở căn phòng lại')).to_be_visible()
+            self.page.unroute('**/models/bedroom.glb')
+
+    def test_deadline_during_decode_and_retry(self):
+        self.page.emulate_media(reduced_motion='reduce')
+        self.page.add_init_script('''const original=window.createImageBitmap.bind(window);
+          let release=false;const pending=[];
+          window.__releaseRoomImages=()=>{release=true;pending.forEach(f=>f());};
+          window.createImageBitmap=(...args)=>original(...args).then(b=>
+            b.width!==256||release?b:new Promise(r=>pending.push(()=>r(b))));''')
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('status')).to_have_text(FAILED_STATUS,timeout=18_000)
+        self.page.evaluate('window.__releaseRoomImages()')
+        self.page.wait_for_timeout(300)
+        expect(self.page.get_by_role('status')).to_have_text(FAILED_STATUS)
+        self.page.get_by_role('button',name='Thử mở căn phòng lại').click()
+        self.settled()
+
+    def test_resize_and_motion_change(self):
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('status')).to_have_text('Đang đến cửa sổ trên lầu…',timeout=8_000)
+        self.page.set_viewport_size({'width':390,'height':844})
+        self.page.wait_for_function("Number(document.querySelector('#transition-veil').style.opacity) > .1",timeout=12_000)
+        self.page.set_viewport_size({'width':1440,'height':900})
+        self.page.wait_for_function("document.querySelector('#status').textContent.includes('Ghé vào') && Number(document.querySelector('#transition-veil').style.opacity)===0",timeout=8_000)
+        self.page.set_viewport_size({'width':390,'height':844})
+        self.settled()
+        self.page.set_viewport_size({'width':1440,'height':900})
+        self.settled()
+        self.page.reload()
+        self.page.wait_for_function("Number(document.querySelector('#transition-veil')?.style.opacity) > .1",timeout=15_000)
+        self.page.emulate_media(reduced_motion='reduce')
+        self.settled()
+
+    def test_teardown_during_retry_and_reveal(self):
+        self.page.emulate_media(reduced_motion='reduce')
+        count=[0]
+        def initial_failure(r):
+            count[0]+=1
+            if count[0]==1:r.fulfill(status=404,body='missing')
+            else:r.continue_()
+        self.page.route('**/models/bedroom.glb',initial_failure)
+        self.page.add_init_script('''const original=window.createImageBitmap.bind(window);
+          window.__pendingRoomImages=[];
+          window.createImageBitmap=(...args)=>original(...args).then(b=>b.width!==256?b:
+            new Promise(r=>window.__pendingRoomImages.push(()=>r(b))));''')
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('status')).to_have_text(FAILED_STATUS,timeout=8_000)
+        self.page.get_by_role('button',name='Thử mở căn phòng lại').click()
+        self.page.wait_for_function('window.__pendingRoomImages.length>0')
+        self.page.evaluate("window.dispatchEvent(new Event('beforeunload'));window.__pendingRoomImages.forEach(f=>f())")
+        self.page.wait_for_timeout(300)
+        self.assertEqual(self.page.locator('canvas').count(),0)
+        self.assertEqual(self.page.locator('#transition-veil').count(),0)
+        self.assertEqual(self.errors,[])
+        self.page.unroute('**/models/bedroom.glb')
+        # A fresh context removes the deliberate decode delay.
+        self.context.close();self.setUp()
+        self.page.goto(BASE)
+        self.page.wait_for_function("Number(document.querySelector('#transition-veil')?.style.opacity) > .1",timeout=15_000)
+        self.page.evaluate("window.dispatchEvent(new Event('beforeunload'))")
+        self.page.wait_for_timeout(300)
+        self.assertEqual(self.page.locator('canvas').count(),0)
+        self.assertEqual(self.page.locator('#transition-veil').count(),0)
+        self.assertEqual(self.errors,[])
+
+    def test_webgl_fallback(self):
+        self.page.add_init_script('''const get=HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext=function(type,...args){
+            return String(type).includes('webgl')?null:get.call(this,type,...args);
+          };''')
+        self.page.goto(BASE)
+        expect(self.page.get_by_role('status')).to_contain_text('không thể khởi động WebGL')
+        self.assertEqual(self.page.locator('#scene-root canvas').count(),0)
+        self.assertEqual(self.errors,[])
 
 
 if __name__=='__main__':
