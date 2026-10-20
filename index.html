@@ -27,6 +27,8 @@
 </head>
 <body>
 <div id="loading">Đang tải ngôi nhà...</div>
+<div id="err" style="position:fixed;left:8px;right:8px;bottom:8px;color:#ff8a80;font-size:12px;z-index:30;pointer-events:none"></div>
+<script>window.addEventListener('error',e=>{const el=document.getElementById('err'); if(el) el.textContent=e.message+' @ '+e.filename+':'+e.lineno;});</script>
 <div id="hint"></div>
 <div id="modal"><div class="box"><h2>💌 Thiệp 20/10</h2><p id="modalText"></p><button id="closeModal">Đóng</button></div></div>
 <script type="module" src="./main.js"></script>

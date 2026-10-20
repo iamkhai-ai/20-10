@@ -1,9 +1,5 @@
 import * as THREE from 'three';
 import { RoomEnvironment } from 'three/addons/environments/RoomEnvironment.js';
-import { EffectComposer } from 'three/addons/postprocessing/EffectComposer.js';
-import { RenderPass } from 'three/addons/postprocessing/RenderPass.js';
-import { UnrealBloomPass } from 'three/addons/postprocessing/UnrealBloomPass.js';
-import { OutputPass } from 'three/addons/postprocessing/OutputPass.js';
 
 const loading = document.getElementById('loading');
 const hint = document.getElementById('hint');
@@ -11,9 +7,15 @@ const modal = document.getElementById('modal');
 const modalText = document.getElementById('modalText');
 const closeModal = document.getElementById('closeModal');
 
-const renderer = new THREE.WebGLRenderer({ antialias: true });
+let renderer;
+try {
+  renderer = new THREE.WebGLRenderer({ antialias: true, powerPreference: 'high-performance' });
+} catch (e) {
+  document.getElementById('loading').textContent = 'Trình duyệt không hỗ trợ WebGL. Hãy mở bằng Chrome/Safari mới nhất.';
+  throw e;
+}
 renderer.setSize(window.innerWidth, window.innerHeight);
-renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
 renderer.shadowMap.enabled = true;
 renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -41,7 +43,7 @@ point.position.set(0, 2, 2);
 scene.add(point);
 const hemi = new THREE.HemisphereLight(0xffe4ec, 0x4a3a5a, 0.5);
 scene.add(hemi);
-sun.shadow.mapSize.set(2048, 2048);
+sun.shadow.mapSize.set(1024, 1024);
 sun.shadow.camera.near = 0.5;
 sun.shadow.camera.far = 40;
 sun.shadow.camera.left = -12;
@@ -413,11 +415,6 @@ renderer.domElement.addEventListener('touchend', (e) => { e.preventDefault(); on
 closeModal.addEventListener('click', () => { modal.style.display = 'none'; });
 
 const clock = new THREE.Clock();
-const composer = new EffectComposer(renderer);
-composer.addPass(new RenderPass(scene, camera));
-const bloomPass = new UnrealBloomPass(new THREE.Vector2(window.innerWidth, window.innerHeight), 0.35, 0.4, 0.85);
-composer.addPass(bloomPass);
-composer.addPass(new OutputPass());
 
 function animate() {
   requestAnimationFrame(animate);
@@ -489,7 +486,7 @@ function animate() {
     }
   }
 
-  composer.render();
+  renderer.render(scene, camera);
 }
 animate();
 
@@ -497,7 +494,6 @@ window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight;
   camera.updateProjectionMatrix();
   renderer.setSize(window.innerWidth, window.innerHeight);
-  composer.setSize(window.innerWidth, window.innerHeight);
 });
 
 loading.style.display = 'none';
