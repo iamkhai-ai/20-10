@@ -94,6 +94,65 @@ class StateChecks(BrowserCase):
         self.assertEqual(r['elapsedMs'],1100)
 
 
+class InteractionChecks(BrowserCase):
+    def setUp(self):
+        super().setUp();self.isolated()
+        self.page.evaluate("""async()=>{window.probe=await(await import('/tests/watering-interaction-harness.ts')).createInteractionProbe()}""")
+
+    def amount(self):
+        return self.page.get_by_role('progressbar').evaluate('(e)=>e.value')
+
+    def test_button_pause_resume_and_complete_once(self):
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.wait_for_timeout(450)
+        self.assertGreater(self.amount(),.2)
+        self.page.get_by_role('button',name='Tạm dừng',exact=True).click()
+        amount=self.amount();self.page.wait_for_timeout(250);self.assertEqual(self.amount(),amount)
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.evaluate('()=>probe.interaction.update(performance.now()+5001)')
+        expect(self.page.get_by_role('status')).to_have_text('Cây đã đủ nước rồi.')
+        self.assertEqual(self.page.evaluate('probe.completions()'),1)
+        self.assertFalse(self.page.evaluate("probe.bedroom.group.getObjectByName('watering-effects').visible"))
+
+    def test_drag_valid_off_target_and_release(self):
+        can=self.page.evaluate("probe.project('can')");soil=self.page.evaluate("probe.project('soil')")
+        self.page.mouse.move(can['x'],can['y']);self.page.mouse.down()
+        self.page.mouse.move(soil['x'],soil['y'],steps=8);self.page.wait_for_timeout(350)
+        self.assertGreater(self.amount(),.1)
+        self.page.mouse.move(50,700);self.page.wait_for_timeout(100)
+        amount=self.amount();self.page.wait_for_timeout(150);self.assertEqual(amount,self.amount())
+        self.page.mouse.up();self.assertFalse(self.page.evaluate("probe.bedroom.group.getObjectByName('watering-effects').visible"))
+
+    def test_blur_hidden_escape_and_focus_loss_pause(self):
+        for event in ('blur','hidden','escape','focus'):
+            self.page.get_by_role('button',name='Tưới cây',exact=True).click();self.page.wait_for_timeout(90)
+            if event=='hidden':
+                self.page.evaluate("()=>{Object.defineProperty(document,'hidden',{configurable:true,value:true});document.dispatchEvent(new Event('visibilitychange'))}")
+            elif event=='escape':self.page.keyboard.press('Escape')
+            elif event=='focus':self.page.locator('#status').focus()
+            else:self.page.evaluate("window.dispatchEvent(new Event('blur'))")
+            value=self.amount();self.page.wait_for_timeout(120);self.assertEqual(value,self.amount())
+            self.page.evaluate("()=>Object.defineProperty(document,'hidden',{configurable:true,value:false})")
+        self.assertEqual(self.errors,[])
+
+    def test_pointer_arbitration_offset_resize_and_dispose(self):
+        self.page.evaluate("()=>{const c=probe.runtime.renderer.domElement;c.style.width='900px';c.style.height='600px';c.style.marginLeft='90px'}")
+        can=self.page.evaluate("probe.project('can')");soil=self.page.evaluate("probe.project('soil')")
+        self.page.mouse.move(can['x'],can['y']);self.page.mouse.down()
+        self.page.mouse.move(soil['x'],soil['y'],steps=5);self.page.wait_for_timeout(90)
+        self.assertGreater(self.amount(),0)
+        self.page.locator('canvas').dispatch_event('pointerdown',{'pointerId':99,'isPrimary':False,'button':0,'clientX':5,'clientY':5})
+        self.page.locator('canvas').dispatch_event('pointerup',{'pointerId':99})
+        self.page.wait_for_timeout(90);self.assertGreater(self.amount(),.1)
+        self.page.locator('canvas').dispatch_event('pointercancel',{'pointerId':1})
+        self.page.mouse.up();self.page.evaluate('()=>probe.interaction.pause()')
+        value=self.amount();self.page.wait_for_timeout(90);self.assertEqual(value,self.amount())
+        self.page.get_by_role('button',name='Tưới cây',exact=True).click()
+        self.page.evaluate('()=>{probe.interaction.setReducedMotion(false);probe.interaction.dispose();probe.interaction.dispose()}')
+        self.assertEqual(self.page.locator('#watering-panel').count(),0)
+        self.assertFalse(self.page.evaluate("!!probe.bedroom.group.getObjectByName('watering-effects')"))
+
+
 class ControlChecks(BrowserCase):
     def setUp(self):
         super().setUp();self.isolated()
