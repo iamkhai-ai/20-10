@@ -244,9 +244,9 @@ function ease(t) { return t < 0.5 ? 2 * t * t : 1 - Math.pow(-2 * t + 2, 2) / 2;
 
 let zooming = true;
 const zoomDuration = 4;
-const startCam = new THREE.Vector3(0, 2.8, 9);
+const startCam = new THREE.Vector3(0, 1.8, 7);
 const endCam = new THREE.Vector3(0, 1.6, 0.9);
-const lookStart = new THREE.Vector3(0, 1.5, 0);
+const lookStart = new THREE.Vector3(0, 1.8, 0);
 const lookEnd = new THREE.Vector3(0, 0.9, -0.2);
 let zoomT = 0;
 
