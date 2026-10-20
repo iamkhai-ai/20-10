@@ -1,4 +1,80 @@
-# Milestone 2 handoff
+# Milestone 2 visual refinement — current local handoff
+
+The user requested a more detailed, near-real warm bedroom, then refined
+planter, wall, floor, quilt and watering-can appearance during review.
+Current source/assets: `f426084a88fae72fe2d3969a44fcf2930738e5c1` on
+`codex/bedroom-reveal`. The handoff documentation commit does not change
+that verified/reviewed source. No M2 push, merge or deployment occurred.
+
+## Current appearance
+
+- Sewn cushions, shaped headboard, naturally draped milk-cream quilt and
+  sage throw; long staggered blond oak floorboards and pale oak furniture.
+- Clean mist-blue walls, light sage paneling and window-directed sunlight.
+- Smooth rounded butter-yellow planter with cream rim/saucer and small
+  rose flower motifs; shaped seedling leaves and loose soil detail.
+- Compact oval pastel-blue can, one swept handle, fine long tapered spout,
+  rolled brass filling rim and small perforated brass rose.
+- Packed local albedo/normal/roughness maps on UV0 and static AO on UV1.
+  Can, plant, curtains, glass and window backdrop do not cast permanent
+  baked shadows. The backdrop does not block runtime daylight.
+
+The M2 endpoint remains the settled desk. Watering, tulip bloom, greeting
+card and personal message are later scopes. The exterior GLB is unchanged.
+Read the current M2 design and `assets/blender/README.md` before edits.
+The asset script and its `bedroom_surfaces.py` helper rebuild with Blender
+4.5.14 LTS and its bundled NumPy; no new runtime dependency was added.
+
+## Final revision evidence
+
+- **PASS:** production build and its strict TypeScript check at the final
+  source/assets. Bundle `index-D-NzPYsC.js`, 754.10 kB / 204.72 kB gzip.
+- **PASS:** packed GLB validation: 4,871,584 bytes, 45,449 triangles,
+  37 primitives, 24 materials, 26 embedded images. All caps are unchanged:
+  6,000,000 bytes / 60,000 triangles / 50 primitives.
+- **PASS:** 17 dev-browser regressions, 212.100 seconds; 7 compiled
+  production experience checks, 148.614 seconds. Coverage includes nodes,
+  local resources, abort/late disposal, covered handoff, skip, reduced
+  motion, resize, room failure/decode deadline/retry, teardown and WebGL
+  fallback. These runs use the final can/oak asset, replacing prior runs.
+- **PASS:** actual 1440x900 and 390x844 final desk renders inspected. Full
+  planter/can silhouettes and window context remain visible. No unexpected
+  JavaScript errors or external requests observed.
+- **PASS:** normal-flow approach/cover/uncover/room/desk frames inspected
+  in both viewports. Final screencast sampling captured 150 desktop and
+  341 portrait frames; selected visual full-cover frames conceal the
+  handoff. This is sampled-frame evidence, not full-video assessment.
+- **PASS:** two fresh independent read-only reviews of `f426084`, tasks
+  `realism2_review_a` and `realism2_review_b`, with no actionable findings.
+  Both checked the source/asset/actual final frames. Requested settings:
+  `gpt-6-luna` / `high`; resolved settings were not exposed. Reviews did not
+  rerun builds/tests; read-only was instructed, not runtime-enforced.
+  Both share a model family, so correlated blind spots remain possible.
+- **FAIL:** warning-free desktop console; the existing driver shader
+  precision warning X4122 persists. Portrait capture had no warnings.
+- **NOT_RUN:** physical-phone performance and full-video temporal review.
+  Viewport captures and submission counts do not establish phone FPS.
+
+GLB SHA-256:
+`d3050738274f5062507f7869ce90f8d4c5cfef1969d9bd5ea001f9d4770f0268`.
+The original exterior GLB SHA remains
+`e548f10b90dab7cad02b5918e631438946d5d7e0812a7983d91e9662d78b4279`.
+Vite's JavaScript chunk warning remains. One attempted capture overlapped
+with a build clearing `dist`; it failed with an HTTP response error. The
+build completed and the subsequent final capture passed.
+
+Prior review of `27ce926` raised one P2: the desk was too dark/red for the
+pale-oak design. The lighter/desaturated wood in `f426084`, actual final
+frames and both new reviews resolve that finding. No waiver was used.
+Older measurements/reviews below describe historical revisions only.
+User visual acceptance remains separate from these technical results.
+
+Preview: `http://127.0.0.1:4176/`. Refresh after a new local build.
+Use the existing commands below for rebuilding and regression checks.
+The M3 pause-versus-reset watering-time decision is still open.
+
+---
+# Historical Milestone 2 initial handoff
 
 ## Current delivered scope
 
