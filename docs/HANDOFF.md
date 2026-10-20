@@ -1,4 +1,72 @@
-# Milestone 4 bloom and greeting — current local handoff
+# Water-driven growth, botanical card and shower — current local handoff
+
+User-requested refinement on 2026-10-20. Branch `codex/growing-garden-polish`,
+checkout `D:\Z_PROJECT\20_10`. Frozen reviewed/verified source:
+`fed79a4dce2863e278ea86322806fa8ceb2d07ef`, based on `f561b8d`.
+The following handoff-only commit preserves that runtime and its requirements.
+
+## Delivered changes
+
+1. **Flowers grow during watering.** The watering controller's read-only progress
+   feeds bloom in the existing RAF. Stems, buds and petals map directly to the
+   accumulated five valid seconds. Pausing or invalid aim freezes growth; a live
+   reduced-motion change before completion never fills the missing progress.
+   Flowers finish at five seconds, then only the card's 900ms reveal remains
+   (immediate with reduced motion). No second growth clock runs during watering.
+2. **Botanical folded card.** The 3D paper gains a rose backing, beveled edges,
+   gold spine and printed tulip sprigs/seal. The native dialog has an illustrated
+   rose cover and ivory letter page, fold shading and a seal motif. Portrait
+   changes to a compact botanical header. Initial focus is the heading and the
+   dialog starts at scrollTop0; Escape/close restores the semantic card button.
+   The illustration is a local SVG, with no remote asset or dependency.
+3. **Smaller can and shower.** The can scales to82% of its previous size. Its
+   outlet is calibrated before scaling and automatic aim includes that scale.
+   Nine thin instanced jets leave the rose, plus24 bounded moving droplets.
+   Reduced motion retains the steady nine-jet fan without moving drops.
+   Aim reserves the full.04-radius footprint within the.14 soil disk, so an
+   edge-aimed fan cannot count as valid watering. Resources remain owned/bounded.
+
+The accepted room, camera poses and both packed GLBs remain unchanged. Final
+greeting is still the documented neutral default in `src/content/gift-message.ts`;
+personal text has not been supplied. No merge, remote push or deployment.
+
+## Final source evidence
+
+| Check | Result | Details |
+|---|---|---|
+| Explicit typecheck / production build | PASS | JS `index-D5Srv84F.js`,780.40kB /213.59kB gzip; CSS5.60kB /1.98kB gzip |
+| Watering view + input coordinator | PASS | 10 tests,26.618s; includes smaller-can calibration, complete shower footprint and cancellation/disposal |
+| Card + bloom modules | PASS | 4 tests,7.765s; progress-driven growth, pause/motion and owned cleanup |
+| Actual M4 experience, dev | PASS | 4 tests,41.320s; includes scene crop changing during growth and remaining byte-identical while paused |
+| M3 experience regression, dev | PASS | 5 tests,34.313s; mouse/keyboard/touch, pause, interruption, retry |
+| M4 compiled experience | PASS | 4 tests,47.272s, preview4176 |
+| Targeted compiled M2 regressions | PASS | 2 tests,48.469s: normal progression and resize/motion |
+| Actual graphics / console / requests | PASS | Desktop1440x900 and portrait390x844, normal/reduced: partial growth, shower, finished card and dialog; no unexpected JS errors/external requests |
+| Warning-free console | FAIL | Existing desktop driver X4122 precision warning remains |
+| Physical-phone FPS / full-video review | NOT_RUN | No claim based on headless viewport captures |
+
+Focused tests first reproduced the missing progress route and single stream,
+then passed. A further edge-aim test reproduced a shower crossing the soil rim;
+the stricter footprint check resolves it. No acceptance threshold was lowered.
+Vite's existing chunk-size warning remains. Unaffected state/loader suites were
+not rerun; historical full-suite evidence below is not presented as a new run.
+
+Two independent read-only reviewers `/root/polish_review_a` and
+`/root/polish_review_b` checked the same clean `fed79a4` source and full amendment
+diff, including lifecycle, shrink/aim geometry, resources, focus and actual
+captures: **no actionable findings**. Both had tests/build NOT_RUN. Requested
+native `gpt-6-luna` / `high` was supported and dispatch accepted; resolved
+settings were not exposed (unknown). Read-only was instructed, not technically
+enforced. Reviewers share a model family and may have correlated blind spots.
+User acceptance of the updated appearance remains separate.
+
+Preview: `http://127.0.0.1:4176/` — reload, water, pause/resume, then open the card.
+Evidence/logs/captures use prefix `polish-` in this Codex task's outputs folder.
+The PROJECT_SPEC user amendment is the current timing/appearance requirement.
+
+---
+
+# Historical Milestone 4 bloom and greeting handoff
 
 The user requested immediate M4 implementation on 2026-10-20 under the existing
 PROJECT_SPEC. Local branch: `codex/bloom-card` at `D:\Z_PROJECT\20_10`.
