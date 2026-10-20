@@ -11,6 +11,12 @@ export interface CameraPosePair {
   arrival: CameraPose;
 }
 
+export interface BedroomPoses {
+  entry: CameraPose;
+  room: CameraPose;
+  desk: CameraPose;
+}
+
 export interface CameraStoryHandle {
   skip(): void;
   reframe(): void;

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+import { loadPackedGlb } from './load-packed-glb';
 import { disposeObjectResources } from '../dispose-object-resources';
 
 export interface ImportedExterior {
@@ -9,46 +9,7 @@ export interface ImportedExterior {
 }
 
 export async function loadExteriorModel(url: string, signal: AbortSignal): Promise<ImportedExterior> {
-  const address = new URL(url, window.location.href);
-  if (address.origin !== window.location.origin) throw new Error('Exterior must be a local asset.');
-  const response = await fetch(address, { signal });
-  if (!response.ok) throw new Error(`Exterior asset returned HTTP ${response.status}.`);
-  const buffer = await response.arrayBuffer();
-  signal.throwIfAborted();
-
-  // The production GLB is packed. Any external URI indicates an invalid export.
-  const manager = new THREE.LoadingManager();
-  manager.setURLModifier((resource) => {
-    if (!resource.startsWith('blob:') && !resource.startsWith('data:')) {
-      throw new Error('Exterior GLB contains an unpacked resource.');
-    }
-    return resource;
-  });
-  const parsing = new GLTFLoader(manager).parseAsync(buffer, '');
-  const group = await new Promise<THREE.Group>((resolve, reject) => {
-    let settled = false;
-    const abort = () => {
-      if (settled) return;
-      settled = true;
-      reject(signal.reason ?? new DOMException('Exterior load aborted.', 'AbortError'));
-    };
-    signal.addEventListener('abort', abort, { once: true });
-    if (signal.aborted) abort();
-    parsing.then((gltf) => {
-      signal.removeEventListener('abort', abort);
-      if (settled) {
-        disposeObjectResources([gltf.scene]);
-        return;
-      }
-      settled = true;
-      resolve(gltf.scene);
-    }, (error: unknown) => {
-      signal.removeEventListener('abort', abort);
-      if (settled) return;
-      settled = true;
-      reject(error);
-    });
-  });
+  const group = await loadPackedGlb(url, signal, 'Exterior');
   try {
     signal.throwIfAborted();
     const required = ['house', 'roof', 'upper_window', 'tree_structure', 'tree_sway', 'window_target'];
